@@ -2,30 +2,31 @@
 export interface LeadData {
   id: string
   name: string
-  demographic: {
+
+  overallScore?: number // 0-1
+  osi: {
+    // Open Source Intelligence
     industry: string
+    webPresence?: number // 0-1
+    relevance?: number // 0-1
+    companyWebsite?: string
   }
-  evaluation: {
-    webPresence?: number // 0-100
-    relevance?: number // 0-100
-    interestInProduct?: number // 0-100
-  }
-  date: string
-  image: string
-  companyWebsite?: string
-  records: {
+  audios: {
+    date: string
     sentiment: {
-      positive: number
-      neutral: number
-      negative: number
+      emotion: string
+      score: number // 0-1
     }
     topics: string[]
+    actionableItems: string[]
   }[]
 }
 
 export interface LeadsContextType {
   leads: LeadData[]
+  addLead: (data: LeadData) => void
   updateLead: (id: string, data: Partial<LeadData>) => void
+  deleteLead: (id: string) => void
 }
 
 export interface AuthContextType {

@@ -1,45 +1,55 @@
-import { LeadData, StatCard } from '../types';
+import { LeadData } from "../types"
 
 // Initial leads data
 export const initialLeads: LeadData[] = [
-	{
-		id: '1',
-		name: 'Abstract Element',
-		industry: '3D Elements',
-		date: '31 July 2023',
-		companyWebsite: 'https://abstractelement.com',
-		image: 'https://images.unsplash.com/photo-1633425934610-96d0ce0cdb21?w=100&h=100&fit=crop',
-		recordCount: 3,
-		analysis: {
-			sentiment: {
-				positive: 75,
-				neutral: 20,
-				negative: 5
-			},
-		},
-		topics: ['pricing', 'features'],
-		score: 85,
-		webPresenceScore: 30,
-		relevancyScore: 45
-	},
-	{
-		id: '2',
-		name: 'Abstract Minimal',
-		industry: 'Image',
-		date: '31 July 2023',
-		companyWebsite: 'https://abstractminimal.io',
-		image: 'https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?w=100&h=100&fit=crop',
-		recordCount: 1,
-		analysis: {
-			sentiment: {
-				positive: 60,
-				neutral: 30,
-				negative: 10
-			},
-		},
-		topics: ['integration', 'budget'],
-		score: 65,
-		webPresenceScore: 25,
-		relevancyScore: 20,
-	}
-];
+  {
+    id: "1",
+    name: "Abstract Element",
+    overallScore: 0.85,
+    osi: {
+      industry: "3D Elements",
+      companyWebsite: "https://abstractelement.com",
+      webPresence: 0.3,
+      relevance: 0.45,
+    },
+    audios: [
+      {
+        date: "31 July 2023",
+        sentiment: {
+          emotion: "positive",
+          score: 0.75,
+        },
+        topics: ["pricing", "features"],
+        actionableItems: [
+          "Improve pricing transparency",
+          "Enhance feature list",
+        ],
+      },
+    ],
+  },
+  {
+    id: "2",
+    name: "Abstract Minimal",
+    overallScore: 0.65,
+    osi: {
+      industry: "Image",
+      companyWebsite: "https://abstractminimal.io",
+      webPresence: 0.25,
+      relevance: 0.2,
+    },
+    audios: [
+      {
+        date: "31 July 2023",
+        sentiment: {
+          emotion: "positive",
+          score: 0.6,
+        },
+        topics: ["integration", "budget"],
+        actionableItems: [
+          "Explore integration options",
+          "Review budget allocation",
+        ],
+      },
+    ],
+  },
+]
