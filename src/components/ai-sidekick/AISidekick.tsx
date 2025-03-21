@@ -7,17 +7,18 @@ import {
   Play,
   Save,
   ThumbsUp,
-  Star,
-  AudioWaveform as Waveform,
+  Meh,
+  ThumbsDown,
 } from "lucide-react"
 import { LeadsContext } from "../../contexts/LeadsContext"
 import { initialLeads } from "../../data/initialData"
-import {
-  computeLeadScore,
-  LeadScoringData,
-} from "../../services/leadScoringService"
+import axios from "axios"
+import { LeadAudio } from "../../types"
+import { useAuth } from "../../hooks/useAuth"
 
 export const AISidekick: React.FC = () => {
+  const { user } = useAuth()
+
   const [isRecording, setIsRecording] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
@@ -54,12 +55,9 @@ export const AISidekick: React.FC = () => {
           setAudioData({ volume: newVolume, tone: newTone })
           lastUpdate = now
         }
-
         animationRef.current = requestAnimationFrame(simulateAudioChanges)
       }
-
       animationRef.current = requestAnimationFrame(simulateAudioChanges)
-
       return () => {
         if (animationRef.current) {
           cancelAnimationFrame(animationRef.current)
@@ -83,52 +81,29 @@ export const AISidekick: React.FC = () => {
     setShowConfirmation(true)
   }
 
-  const [analysisResults, setAnalysisResults] = useState<any>(null)
-  const [isComputing, setIsComputing] = useState(false)
+  const [analysisResults, setAnalysisResults] = useState<LeadAudio | null>(null)
 
   // Function to analyze audio using our lead scoring service
   const analyzeAudio = async (file: File) => {
     setIsAnalyzing(true)
-
     try {
-      // In a real app, you would convert the file to something the API can use
-      // For demo purposes, we'll simulate the process
-      const reader = new FileReader()
-
-      reader.onload = async (e) => {
-        const audioData = e.target?.result
-
-        if (audioData) {
-          setIsComputing(true)
-
-          // Get the selected lead data
-          const selectedLeadData = selectedLead
-            ? initialLeads.find((l) => l.id === selectedLead)
-            : null
-
-          if (selectedLeadData) {
-            // Create scoring data
-            const scoringData: LeadScoringData = {
-              companyName: selectedLeadData.name,
-              companyWebsite: selectedLeadData.companyWebsite,
-              audioData: audioData as string,
-            }
-
-            // Compute the score
-            const results = await computeLeadScore(scoringData)
-            setAnalysisResults(results)
-          }
-
-          setIsComputing(false)
-          setIsAnalyzing(false)
+      if (!user) throw new Error("User is logged out")
+      const formData = new FormData()
+      formData.append("file", file)
+      const resp = await axios.post<LeadAudio>(
+        `${import.meta.env.VITE_SERVER_URL}/api/analyze_audio`,
+        formData,
+        {
+          headers: {
+            "Content-Type": `multipart/form-data`,
+            Authorization: `Bearer ${user.accessToken}`,
+          },
         }
-      }
-
-      reader.readAsDataURL(file)
-    } catch (error) {
-      console.error("Error analyzing audio:", error)
+      )
+      setAnalysisResults(resp.data)
       setIsAnalyzing(false)
-      setIsComputing(false)
+    } catch (e) {
+      setIsAnalyzing(false)
     }
   }
 
@@ -136,27 +111,8 @@ export const AISidekick: React.FC = () => {
     if (selectedLead && analysisResults) {
       const selectedLeadData = initialLeads.find((l) => l.id === selectedLead)
       if (selectedLeadData) {
-        const positivePercentage = Math.round(
-          (analysisResults.sentimentScore / 100) * 80
-        )
-        const neutralPercentage = Math.round(
-          (1 - analysisResults.sentimentScore / 100) * 80
-        )
-        const negativePercentage = 100 - positivePercentage - neutralPercentage
-
         updateLead(selectedLead, {
-          recordCount: (selectedLeadData.recordCount || 0) + 1,
-          analysis: {
-            sentiment: {
-              positive: positivePercentage,
-              neutral: neutralPercentage,
-              negative: negativePercentage,
-            },
-            topics: analysisResults.topics,
-            score: Math.round(analysisResults.finalScore),
-            webPresenceScore: analysisResults.webPresenceScore,
-            relevancyScore: analysisResults.relevancyScore,
-          },
+          audios: [...selectedLeadData.audios, analysisResults],
         })
       }
       setShowConfirmation(false)
@@ -293,14 +249,10 @@ export const AISidekick: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                {isAnalyzing || isComputing ? (
+                {isAnalyzing ? (
                   <div className="flex flex-col items-center gap-2">
                     <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                    <p>
-                      {isAnalyzing
-                        ? "Analyzing audio..."
-                        : "Computing lead score..."}
-                    </p>
+                    <p>Analyzing audio...</p>
                   </div>
                 ) : (
                   <>
@@ -342,19 +294,30 @@ export const AISidekick: React.FC = () => {
                         <div className="flex justify-between items-center">
                           <span className="text-sm">Sentiment:</span>
                           <div className="flex items-center gap-2">
-                            <ThumbsUp className="w-4 h-4 text-green-500" />
-                            <span className="text-sm">
-                              {analysisResults
-                                ? analysisResults.sentimentScore > 70
-                                  ? "Positive"
-                                  : analysisResults.sentimentScore > 40
-                                    ? "Neutral"
-                                    : "Negative"
-                                : "Positive"}
-                            </span>
+                            {!analysisResults ||
+                            analysisResults.sentiment.score > 0.7 ? (
+                              <>
+                                <ThumbsUp className="w-4 h-4 text-green-500" />
+                                <span className="text-sm">Positive</span>
+                              </>
+                            ) : analysisResults.sentiment.score > 0.4 ? (
+                              <>
+                                <Meh className="w-4 h-4 text-yellow-500" />
+                                <span className="text-sm">Neutral</span>
+                              </>
+                            ) : (
+                              <>
+                                <ThumbsDown className="w-4 h-4 text-red-500" />
+                                <span className="text-sm">Negative</span>
+                              </>
+                            )}
                             {analysisResults && (
                               <span className="text-xs text-gray-500">
-                                ({Math.round(analysisResults.sentimentScore)}%)
+                                (
+                                {Math.round(
+                                  analysisResults.sentiment.score * 100
+                                )}
+                                %)
                               </span>
                             )}
                           </div>
@@ -362,61 +325,31 @@ export const AISidekick: React.FC = () => {
                         <div className="flex justify-between items-center">
                           <span className="text-sm">Key Topics:</span>
                           <div className="flex flex-wrap gap-1 justify-end">
-                            {analysisResults && analysisResults.topics ? (
-                              analysisResults.topics.map(
-                                (topic: string, index: number) => (
-                                  <span
-                                    key={index}
-                                    className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs"
-                                  >
-                                    {topic}
-                                  </span>
-                                )
+                            {(analysisResults?.topics ?? []).map(
+                              (topic: string, index: number) => (
+                                <span
+                                  key={index}
+                                  className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs"
+                                >
+                                  {topic}
+                                </span>
                               )
-                            ) : (
-                              <>
-                                <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs">
-                                  pricing
-                                </span>
-                                <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs">
-                                  features
-                                </span>
-                              </>
                             )}
                           </div>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-sm">Web Presence:</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm">
-                              {analysisResults
-                                ? Math.round(analysisResults.webPresenceScore)
-                                : 25}
-                              /50
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm">Market Relevancy:</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm">
-                              {analysisResults
-                                ? Math.round(analysisResults.relevancyScore)
-                                : 30}
-                              /50
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm">Lead Score:</span>
-                          <div className="flex items-center gap-2">
-                            <Star className="w-4 h-4 text-yellow-500" />
-                            <span className="text-sm">
-                              {analysisResults
-                                ? Math.round(analysisResults.finalScore)
-                                : 75}
-                              /100
-                            </span>
+                          <span className="text-sm">Actionable Items:</span>
+                          <div className="flex flex-wrap gap-1 justify-end">
+                            {(analysisResults?.actionableItems ?? []).map(
+                              (action: string, index: number) => (
+                                <span
+                                  key={index}
+                                  className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs"
+                                >
+                                  {action}
+                                </span>
+                              )
+                            )}
                           </div>
                         </div>
                       </div>
@@ -475,4 +408,3 @@ export const AISidekick: React.FC = () => {
     </main>
   )
 }
-

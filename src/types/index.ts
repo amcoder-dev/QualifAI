@@ -1,4 +1,24 @@
 // Types
+export interface EngagementData {
+  talkToListen: number
+  turnTakingFrequency: number
+  interruptions: number
+  speechPace: number
+}
+
+export interface SentimentData {
+  emotion: string
+  score: number // 0-1
+}
+
+export interface LeadAudio {
+  date: string
+  sentiment: SentimentData
+  engagement: EngagementData
+  topics: string[]
+  actionableItems: string[]
+}
+
 export interface LeadData {
   id: string
   name: string
@@ -11,15 +31,7 @@ export interface LeadData {
     relevance?: number // 0-1
     companyWebsite?: string
   }
-  audios: {
-    date: string
-    sentiment: {
-      emotion: string
-      score: number // 0-1
-    }
-    topics: string[]
-    actionableItems: string[]
-  }[]
+  audios: LeadAudio[]
 }
 
 export interface LeadsContextType {
@@ -31,7 +43,7 @@ export interface LeadsContextType {
 
 export interface AuthContextType {
   isAuthenticated: boolean
-  user: { email: string } | null
+  user: { email: string; accessToken: string } | null
   login: (email: string, password: string) => Promise<void>
   logout: () => void
 }

@@ -5,14 +5,14 @@ import { createClient, Session } from "@supabase/supabase-js"
 const supabase = createClient(
   "https://ittrwlucyrfaqaewpoic.supabase.co",
   // Supabase anonymous key :)
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0dHJ3bHVjeXJmYXFhZXdwb2ljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyNzk1NTcsImV4cCI6MjA1Nzg1NTU1N30.CVt1InPgxfUhFO4pkbCy7PVErnVUJpUrqjwgl41c5l8"
+  import.meta.env.VITE_SUPABASE_ANONYMOUS_KEY
 )
 
 // Create context with default values
 export const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   user: null,
-  login: () => {},
+  login: async () => {},
   logout: () => {},
 })
 
@@ -26,7 +26,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const handleSessionChange = (session: Session | null) => {
     if (session) {
       setIsAuthenticated(true)
-      setUser({ email: session.user.email || "Anonymous User" })
+      setUser({
+        email: session.user.email || "Anonymous User",
+        accessToken: session.access_token,
+      })
     } else {
       setIsAuthenticated(false)
       setUser(null)
