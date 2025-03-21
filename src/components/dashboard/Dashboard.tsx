@@ -8,23 +8,23 @@ export const Dashboard: React.FC = () => {
 
   const dashboardStats: StatCard[] = [
     {
-      title: "Earning",
-      value: "$198k",
-      change: "+32.8% this month",
+      title: "Conversion Rate",
+      value: "23.5%",
+      change: "+1.3% this month",
       icon: <LayoutGrid className="w-6 h-6 text-green-500" />,
       bgColor: "bg-green-50",
     },
     {
-      title: "Balance",
-      value: "$2.4k",
+      title: "Conversion Time",
+      value: "5.7 business days",
       change: "-2% this month",
       icon: <Users className="w-6 h-6 text-blue-500" />,
       bgColor: "bg-blue-50",
     },
     {
-      title: "Total Sales",
-      value: "$89k",
-      change: "+11% this week",
+      title: "Total Deals Won",
+      value: "65 deals",
+      change: "+23% this week",
       icon: <LayoutGrid className="w-6 h-6 text-pink-500" />,
       bgColor: "bg-pink-50",
     },
