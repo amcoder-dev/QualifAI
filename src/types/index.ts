@@ -7,6 +7,7 @@ export interface LeadData {
   date: string;
   size: string;
   image: string;
+  companyWebsite?: string;
   recordCount?: number;
   analysis?: {
     sentiment: {
@@ -16,6 +17,8 @@ export interface LeadData {
     };
     topics: string[];
     score: number;
+    webPresenceScore?: number;
+    relevancyScore?: number;
   };
 }
 
