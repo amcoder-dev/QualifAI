@@ -15,9 +15,15 @@ export const Login: React.FC = () => {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
-  const { login } = useAuth()
+  const { login, isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+
+  if (isAuthenticated) {
+    const from = (location.state as any)?.from?.pathname || "/"
+    navigate(from)
+    return <></>
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
