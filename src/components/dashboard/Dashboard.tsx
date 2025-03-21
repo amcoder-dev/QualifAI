@@ -1,12 +1,15 @@
-import React from 'react';
-import { Search, ChevronDown } from 'lucide-react';
-import { dashboardStats } from '../../data/initialData';
+import React from "react"
+import { Search, ChevronDown } from "lucide-react"
+import { dashboardStats } from "../../data/initialData"
+import { useAuth } from "../../hooks/useAuth"
 
 export const Dashboard: React.FC = () => {
+  const { user } = useAuth()
+
   return (
     <main className="ml-64 p-8">
       <div className="flex justify-between items-center mb-8">
-        <h2 className="text-xl">Welcome back, Admin👋,</h2>
+        <h2 className="text-xl">Welcome back, {user?.email} 👋</h2>
         <div className="relative">
           <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <input
@@ -71,5 +74,5 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
     </main>
-  );
-};
+  )
+}

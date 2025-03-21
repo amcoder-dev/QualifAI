@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState } from "react"
+import { useNavigate, useLocation } from "react-router-dom"
 import {
   LayoutGrid,
   Mail,
@@ -8,27 +8,27 @@ import {
   Activity,
   FileAudio,
   Star,
-} from 'lucide-react';
-import { useAuth } from '../../hooks/useAuth';
+} from "lucide-react"
+import { useAuth } from "../../hooks/useAuth"
 
 export const Login: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const { login } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
+  const { login } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
     try {
-      login(email, password);
-      const from = (location.state as any)?.from?.pathname || '/';
-      navigate(from);
+      await login(email, password)
+      const from = (location.state as any)?.from?.pathname || "/"
+      navigate(from)
     } catch (err) {
-      setError('Invalid credentials');
+      setError("Invalid credentials")
     }
-  };
+  }
 
   return (
     <div className="min-h-screen flex">
@@ -64,7 +64,7 @@ export const Login: React.FC = () => {
                   Email address
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-20">
                     <Mail className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
@@ -75,7 +75,7 @@ export const Login: React.FC = () => {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="appearance-none relative block w-full px-3 py-2 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm bg-white"
+                    className="appearance-none relative block w-full px-3 py-2 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                     placeholder="Email address"
                   />
                 </div>
@@ -88,7 +88,7 @@ export const Login: React.FC = () => {
                   Password
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-20">
                     <Lock className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
@@ -99,7 +99,7 @@ export const Login: React.FC = () => {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="appearance-none relative block w-full px-3 py-2 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm bg-white"
+                    className="appearance-none relative block w-full px-3 py-2 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                     placeholder="Password"
                   />
                 </div>
@@ -194,5 +194,5 @@ export const Login: React.FC = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
