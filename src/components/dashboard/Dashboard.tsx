@@ -1,10 +1,34 @@
 import React from "react"
-import { Search, ChevronDown } from "lucide-react"
-import { dashboardStats } from "../../data/initialData"
+import { Search, ChevronDown, LayoutGrid, Users } from "lucide-react"
 import { useAuth } from "../../hooks/useAuth"
+import { StatCard } from "../../types"
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth()
+
+  const dashboardStats: StatCard[] = [
+    {
+      title: "Earning",
+      value: "$198k",
+      change: "+32.8% this month",
+      icon: <LayoutGrid className="w-6 h-6 text-green-500" />,
+      bgColor: "bg-green-50",
+    },
+    {
+      title: "Balance",
+      value: "$2.4k",
+      change: "-2% this month",
+      icon: <Users className="w-6 h-6 text-blue-500" />,
+      bgColor: "bg-blue-50",
+    },
+    {
+      title: "Total Sales",
+      value: "$89k",
+      change: "+11% this week",
+      icon: <LayoutGrid className="w-6 h-6 text-pink-500" />,
+      bgColor: "bg-pink-50",
+    },
+  ]
 
   return (
     <main className="ml-64 p-8">

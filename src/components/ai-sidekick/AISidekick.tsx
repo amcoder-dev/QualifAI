@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useContext } from 'react';
+import React, { useState, useRef, useEffect, useContext } from "react"
 import {
   Mic,
   Square,
@@ -9,108 +9,173 @@ import {
   ThumbsUp,
   Star,
   AudioWaveform as Waveform,
-} from 'lucide-react';
-import { LeadsContext } from '../../contexts/LeadsContext';
-import { initialLeads } from '../../data/initialData';
+} from "lucide-react"
+import { LeadsContext } from "../../contexts/LeadsContext"
+import { initialLeads } from "../../data/initialData"
+import {
+  computeLeadScore,
+  LeadScoringData,
+} from "../../services/leadScoringService"
 
 export const AISidekick: React.FC = () => {
-  const [isRecording, setIsRecording] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [showLeadsDropdown, setShowLeadsDropdown] = useState(false);
-  const [showConfirmation, setShowConfirmation] = useState(false);
-  const [selectedLead, setSelectedLead] = useState<string | null>(null);
+  const [isRecording, setIsRecording] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [showLeadsDropdown, setShowLeadsDropdown] = useState(false)
+  const [showConfirmation, setShowConfirmation] = useState(false)
+  const [selectedLead, setSelectedLead] = useState<string | null>(null)
   const [audioData, setAudioData] = useState<{
-    volume: number;
-    tone: 'low' | 'medium' | 'high';
-  }>({ volume: 0.5, tone: 'medium' });
-  
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const animationRef = useRef<number | null>(null);
-  const { updateLead } = useContext(LeadsContext);
+    volume: number
+    tone: "low" | "medium" | "high"
+  }>({ volume: 0.5, tone: "medium" })
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const animationRef = useRef<number | null>(null)
+  const { updateLead } = useContext(LeadsContext)
 
   // Simulate audio volume and tone changes
   useEffect(() => {
     if (isRecording) {
-      let lastUpdate = Date.now();
-      
+      let lastUpdate = Date.now()
+
       const simulateAudioChanges = () => {
-        const now = Date.now();
+        const now = Date.now()
         // Only update every 100ms to create a natural rhythm
         if (now - lastUpdate > 100) {
           // Generate random volume (0.2 to 1)
-          const newVolume = 0.2 + Math.random() * 0.8;
-          
+          const newVolume = 0.2 + Math.random() * 0.8
+
           // Determine tone based on ranges
-          let newTone: 'low' | 'medium' | 'high' = 'medium';
-          if (newVolume < 0.4) newTone = 'low';
-          else if (newVolume > 0.7) newTone = 'high';
-          
-          setAudioData({ volume: newVolume, tone: newTone });
-          lastUpdate = now;
+          let newTone: "low" | "medium" | "high" = "medium"
+          if (newVolume < 0.4) newTone = "low"
+          else if (newVolume > 0.7) newTone = "high"
+
+          setAudioData({ volume: newVolume, tone: newTone })
+          lastUpdate = now
         }
-        
-        animationRef.current = requestAnimationFrame(simulateAudioChanges);
-      };
-      
-      animationRef.current = requestAnimationFrame(simulateAudioChanges);
-      
+
+        animationRef.current = requestAnimationFrame(simulateAudioChanges)
+      }
+
+      animationRef.current = requestAnimationFrame(simulateAudioChanges)
+
       return () => {
         if (animationRef.current) {
-          cancelAnimationFrame(animationRef.current);
+          cancelAnimationFrame(animationRef.current)
         }
-      };
+      }
     }
-  }, [isRecording]);
+  }, [isRecording])
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+    const file = event.target.files?.[0]
     if (file) {
-      setSelectedFile(file);
-      setIsAnalyzing(true);
-      setTimeout(() => {
-        setIsAnalyzing(false);
-      }, 2000);
+      setSelectedFile(file)
+      // Start the analysis process with real data
+      analyzeAudio(file)
     }
-  };
+  }
 
   const handleSaveToLead = (leadId: string) => {
-    setSelectedLead(leadId);
-    setShowLeadsDropdown(false);
-    setShowConfirmation(true);
-  };
+    setSelectedLead(leadId)
+    setShowLeadsDropdown(false)
+    setShowConfirmation(true)
+  }
 
-  const handleConfirmSave = () => {
-    if (selectedLead) {
-      const selectedLeadData = initialLeads.find((l) => l.id === selectedLead);
+  const [analysisResults, setAnalysisResults] = useState<any>(null)
+  const [isComputing, setIsComputing] = useState(false)
+
+  // Function to analyze audio using our lead scoring service
+  const analyzeAudio = async (file: File) => {
+    setIsAnalyzing(true)
+
+    try {
+      // In a real app, you would convert the file to something the API can use
+      // For demo purposes, we'll simulate the process
+      const reader = new FileReader()
+
+      reader.onload = async (e) => {
+        const audioData = e.target?.result
+
+        if (audioData) {
+          setIsComputing(true)
+
+          // Get the selected lead data
+          const selectedLeadData = selectedLead
+            ? initialLeads.find((l) => l.id === selectedLead)
+            : null
+
+          if (selectedLeadData) {
+            // Create scoring data
+            const scoringData: LeadScoringData = {
+              companyName: selectedLeadData.name,
+              companyWebsite: selectedLeadData.companyWebsite,
+              audioData: audioData as string,
+            }
+
+            // Compute the score
+            const results = await computeLeadScore(scoringData)
+            setAnalysisResults(results)
+          }
+
+          setIsComputing(false)
+          setIsAnalyzing(false)
+        }
+      }
+
+      reader.readAsDataURL(file)
+    } catch (error) {
+      console.error("Error analyzing audio:", error)
+      setIsAnalyzing(false)
+      setIsComputing(false)
+    }
+  }
+
+  const handleConfirmSave = async () => {
+    if (selectedLead && analysisResults) {
+      const selectedLeadData = initialLeads.find((l) => l.id === selectedLead)
       if (selectedLeadData) {
+        const positivePercentage = Math.round(
+          (analysisResults.sentimentScore / 100) * 80
+        )
+        const neutralPercentage = Math.round(
+          (1 - analysisResults.sentimentScore / 100) * 80
+        )
+        const negativePercentage = 100 - positivePercentage - neutralPercentage
+
         updateLead(selectedLead, {
           recordCount: (selectedLeadData.recordCount || 0) + 1,
           analysis: {
             sentiment: {
-              positive: 75,
-              neutral: 20,
-              negative: 5,
+              positive: positivePercentage,
+              neutral: neutralPercentage,
+              negative: negativePercentage,
             },
-            topics: ['pricing', 'features', 'integration', 'budget'],
-            score: 75,
+            topics: analysisResults.topics,
+            score: Math.round(analysisResults.finalScore),
+            webPresenceScore: analysisResults.webPresenceScore,
+            relevancyScore: analysisResults.relevancyScore,
           },
-        });
+        })
       }
-      setShowConfirmation(false);
-      setSelectedLead(null);
+      setShowConfirmation(false)
+      setSelectedLead(null)
+      setAnalysisResults(null)
     }
-  };
+  }
 
   // Get color based on tone
   const getToneColor = () => {
     switch (audioData.tone) {
-      case 'low': return 'bg-blue-500';
-      case 'high': return 'bg-red-500';
-      default: return 'bg-indigo-500';
+      case "low":
+        return "bg-blue-500"
+      case "high":
+        return "bg-red-500"
+      default:
+        return "bg-indigo-500"
     }
-  };
+  }
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -118,15 +183,15 @@ export const AISidekick: React.FC = () => {
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target as Node)
       ) {
-        setShowLeadsDropdown(false);
+        setShowLeadsDropdown(false)
       }
-    };
+    }
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside)
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [])
 
   return (
     <main className="ml-64 p-8">
@@ -137,21 +202,25 @@ export const AISidekick: React.FC = () => {
             <div className="relative w-32 h-32 flex items-center justify-center">
               <div
                 className={`absolute inset-0 rounded-full ${
-                  isRecording ? 'bg-red-100 animate-pulse' : 'bg-indigo-100'
+                  isRecording ? "bg-red-100 animate-pulse" : "bg-indigo-100"
                 }`}
                 style={{
-                  transform: isRecording ? `scale(${0.8 + audioData.volume * 0.4})` : 'scale(1)',
-                  transition: 'transform 0.1s ease-out'
+                  transform: isRecording
+                    ? `scale(${0.8 + audioData.volume * 0.4})`
+                    : "scale(1)",
+                  transition: "transform 0.1s ease-out",
                 }}
               ></div>
               <button
                 className={`relative z-10 w-16 h-16 rounded-full ${
-                  isRecording ? getToneColor() : 'bg-indigo-600'
+                  isRecording ? getToneColor() : "bg-indigo-600"
                 } text-white flex items-center justify-center`}
                 onClick={() => setIsRecording(!isRecording)}
                 style={{
-                  transform: isRecording ? `scale(${0.9 + audioData.volume * 0.3}) translateY(${(audioData.volume - 0.5) * 10}px)` : 'scale(1)',
-                  transition: 'transform 0.1s ease-out, background-color 0.2s'
+                  transform: isRecording
+                    ? `scale(${0.9 + audioData.volume * 0.3}) translateY(${(audioData.volume - 0.5) * 10}px)`
+                    : "scale(1)",
+                  transition: "transform 0.1s ease-out, background-color 0.2s",
                 }}
               >
                 {isRecording ? (
@@ -162,30 +231,32 @@ export const AISidekick: React.FC = () => {
               </button>
             </div>
             <p className="text-lg font-medium">
-              {isRecording ? 'Recording...' : 'Ready to Record'}
+              {isRecording ? "Recording..." : "Ready to Record"}
             </p>
             {isRecording && (
               <div className="w-full max-w-md flex justify-center">
                 <div className="w-full h-16 flex items-center justify-center">
                   {Array.from({ length: 30 }).map((_, i) => {
                     // Calculate a "randomized" height based on the current volume and position
-                    const barPosition = i / 30;
-                    const distanceFromCenter = Math.abs(barPosition - 0.5) * 2;
-                    const baseHeight = audioData.volume * (1 - distanceFromCenter * 0.5);
-                    const randomFactor = Math.sin(i * 0.5 + Date.now() * 0.005) * 0.2;
-                    const height = baseHeight * (1 + randomFactor);
-                    
+                    const barPosition = i / 30
+                    const distanceFromCenter = Math.abs(barPosition - 0.5) * 2
+                    const baseHeight =
+                      audioData.volume * (1 - distanceFromCenter * 0.5)
+                    const randomFactor =
+                      Math.sin(i * 0.5 + Date.now() * 0.005) * 0.2
+                    const height = baseHeight * (1 + randomFactor)
+
                     return (
                       <div
                         key={i}
-                        className={`mx-0.5 ${getToneColor().replace('bg-', 'bg-opacity-80 bg-')}`}
+                        className={`mx-0.5 ${getToneColor().replace("bg-", "bg-opacity-80 bg-")}`}
                         style={{
                           height: `${Math.max(5, height * 64)}px`,
-                          width: '3px',
-                          transition: 'height 0.1s ease-out',
+                          width: "3px",
+                          transition: "height 0.1s ease-out",
                         }}
                       ></div>
-                    );
+                    )
                   })}
                 </div>
               </div>
@@ -198,19 +269,16 @@ export const AISidekick: React.FC = () => {
           <div
             className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center"
             onDragOver={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
+              e.preventDefault()
+              e.stopPropagation()
             }}
             onDrop={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              const file = e.dataTransfer.files[0];
+              e.preventDefault()
+              e.stopPropagation()
+              const file = e.dataTransfer.files[0]
               if (file) {
-                setSelectedFile(file);
-                setIsAnalyzing(true);
-                setTimeout(() => {
-                  setIsAnalyzing(false);
-                }, 2000);
+                setSelectedFile(file)
+                analyzeAudio(file)
               }
             }}
           >
@@ -225,10 +293,14 @@ export const AISidekick: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                {isAnalyzing ? (
+                {isAnalyzing || isComputing ? (
                   <div className="flex flex-col items-center gap-2">
                     <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                    <p>Analyzing audio...</p>
+                    <p>
+                      {isAnalyzing
+                        ? "Analyzing audio..."
+                        : "Computing lead score..."}
+                    </p>
                   </div>
                 ) : (
                   <>
@@ -271,17 +343,67 @@ export const AISidekick: React.FC = () => {
                           <span className="text-sm">Sentiment:</span>
                           <div className="flex items-center gap-2">
                             <ThumbsUp className="w-4 h-4 text-green-500" />
-                            <span className="text-sm">Positive</span>
+                            <span className="text-sm">
+                              {analysisResults
+                                ? analysisResults.sentimentScore > 70
+                                  ? "Positive"
+                                  : analysisResults.sentimentScore > 40
+                                    ? "Neutral"
+                                    : "Negative"
+                                : "Positive"}
+                            </span>
+                            {analysisResults && (
+                              <span className="text-xs text-gray-500">
+                                ({Math.round(analysisResults.sentimentScore)}%)
+                              </span>
+                            )}
                           </div>
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-sm">Key Topics:</span>
-                          <div className="flex gap-1">
-                            <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs">
-                              pricing
+                          <div className="flex flex-wrap gap-1 justify-end">
+                            {analysisResults && analysisResults.topics ? (
+                              analysisResults.topics.map(
+                                (topic: string, index: number) => (
+                                  <span
+                                    key={index}
+                                    className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs"
+                                  >
+                                    {topic}
+                                  </span>
+                                )
+                              )
+                            ) : (
+                              <>
+                                <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs">
+                                  pricing
+                                </span>
+                                <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs">
+                                  features
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Web Presence:</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">
+                              {analysisResults
+                                ? Math.round(analysisResults.webPresenceScore)
+                                : 25}
+                              /50
                             </span>
-                            <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs">
-                              features
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Market Relevancy:</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">
+                              {analysisResults
+                                ? Math.round(analysisResults.relevancyScore)
+                                : 30}
+                              /50
                             </span>
                           </div>
                         </div>
@@ -289,7 +411,12 @@ export const AISidekick: React.FC = () => {
                           <span className="text-sm">Lead Score:</span>
                           <div className="flex items-center gap-2">
                             <Star className="w-4 h-4 text-yellow-500" />
-                            <span className="text-sm">75/100</span>
+                            <span className="text-sm">
+                              {analysisResults
+                                ? Math.round(analysisResults.finalScore)
+                                : 75}
+                              /100
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -346,5 +473,6 @@ export const AISidekick: React.FC = () => {
         </div>
       )}
     </main>
-  );
-};
+  )
+}
+
