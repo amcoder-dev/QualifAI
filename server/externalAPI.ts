@@ -2,7 +2,8 @@ import crypto from "crypto"
 import axios from "axios"
 import { z } from "zod"
 import { JigsawStack } from "jigsawstack"
-import type { EngagementData, LeadAudio, SentimentData } from "../src/types"
+import type { EngagementData, LeadAudio, SentimentData, SearchResult, AISearchData } from "../src/types"
+
 import {
   extractActions,
   overtalk,
@@ -10,6 +11,7 @@ import {
   talkToListen,
   topicExtraction,
   turnTakingFrequency,
+  calculateAISearchRelevantScorePrompt,
 } from "./prompt"
 
 let jigsawStack: ReturnType<typeof JigsawStack>
@@ -26,19 +28,30 @@ export const audioRequest = async (audio: Buffer): Promise<LeadAudio> => {
   console.log("Generating transcript")
   const transcript = await generateTranscript(audio)
   console.log("Transcript OK")
-  const [sentimentResp, engagementResp, topicResp, actionResp] =
+  
+  // Hardcoded company name and industry (To be read from DB)
+  const companyName = "OpenAI"
+  const industry = "AI & Technology"
+  const searchQuery = `Please search something for this company: ${companyName} in this industry: ${industry}`
+  
+  const [sentimentResp, engagementResp, topicResp, actionResp, searchResp] =
     await Promise.all([
       sentiment(transcript),
       engagementPrompts(transcript),
       topicPrompt(transcript),
       extractActionsPrompt(transcript),
+      aiSearchRequest(searchQuery), // Add search request with hardcoded query
     ])
+    
+  console.log("All requests completed.")
+  
   return {
     date: new Date().toDateString(),
     sentiment: sentimentResp,
     engagement: engagementResp,
     topics: topicResp,
     actionableItems: actionResp,
+    search: searchResp,
   }
 }
 
@@ -175,5 +188,107 @@ export const sendPrompt = async (prompt: string): Promise<string | null> => {
   } catch (error) {
     console.error("Error with OpenAI API:", error.message)
     return null
+  }
+}
+
+export const aiSearchRequest = async (query: string): Promise<AISearchData> => {
+  console.log("Performing AI search for:", query)
+  try {
+    const searchResponse = await Promise.race([
+      jigsawStack.web.search({
+        query,
+        ai_overview: true,
+        safe_search: "moderate",
+        spell_check: true,
+      }),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Search timeout")), 15000)
+      )
+    ]) as any;
+    
+    console.log("Search response received")
+    
+    if (!searchResponse || !searchResponse.success) {
+      console.error("Search failed or returned invalid response")
+      return {
+        query,
+        overview: "Search failed to return results.",
+        results: [],
+        relevanceScore: 0.5,
+        isSafe: true
+      }
+    }
+    
+    let snippets = "";
+    try {
+      snippets = (searchResponse.results || [])
+        .map(result => (result.snippets || []))
+        .flat()
+        .slice(0, 5) // Get top 5 snippets
+        .join("\n\n");
+      
+      console.log("Extracted snippets sample:", 
+        snippets.substring(0, 100) + (snippets.length > 100 ? "..." : ""))
+    } catch (e) {
+      console.error("Error extracting snippets:", e)
+      snippets = "No snippets available";
+    }
+    
+    let relevanceScore = 0.5; // Default value
+    try {
+      const modifiedPrompt = calculateAISearchRelevantScorePrompt.replace(
+        "webSnippets: [", 
+        `webSnippets: [\n"${snippets}",`
+      );
+      
+      const relevanceResponse = await sendPrompt(modifiedPrompt);
+      console.log("Raw relevance response:", relevanceResponse);
+      
+      // Extract Relevance Score
+      if (relevanceResponse) {
+        const cleanJson = jsonClean(relevanceResponse);
+        if (cleanJson) {
+          try {
+            const parsed = JSON.parse(cleanJson);
+            if (typeof parsed.relevanceScore === 'number') {
+              relevanceScore = parsed.relevanceScore;
+            }
+          } catch (parseError) {
+            console.error("JSON parse error:", parseError);
+            // Try to extract a number if JSON parsing fails
+            const numberMatch = relevanceResponse.match(/([0-9]*\.?[0-9]+)/);
+            if (numberMatch && numberMatch[0]) {
+              const extractedNumber = parseFloat(numberMatch[0]);
+              if (!isNaN(extractedNumber) && extractedNumber >= 0 && extractedNumber <= 1) {
+                relevanceScore = extractedNumber;
+              }
+            }
+          }
+        }
+      }
+      
+      console.log("Final relevance score:", relevanceScore);
+    } catch (e) {
+      console.error("Error calculating relevance score:", e);
+      // Continue with default score
+    }
+    
+    return {
+      query,
+      overview: searchResponse.ai_overview || "Information about " + query,
+      results: searchResponse.results || [],
+      relevanceScore,
+      isSafe: searchResponse.is_safe || true,
+    }
+  } catch (error) {
+    console.error("Error with AI Search:", error);
+    // Return fallback data instead of throwing
+    return {
+      query,
+      overview: "Information about " + query,
+      results: [],
+      relevanceScore: 0.5,
+      isSafe: true
+    }
   }
 }

@@ -17,6 +17,7 @@ export interface LeadAudio {
   engagement: EngagementData
   topics: string[]
   actionableItems: string[]
+  search?: AISearchData // Added search data
 }
 
 export interface LeadData {
@@ -54,4 +55,27 @@ export interface StatCard {
   change: string
   icon: React.ReactNode
   bgColor: string
+}
+
+export interface SearchResult {
+  title: string
+  url: string
+  description: string
+  content?: string
+  site_name?: string
+  site_long_name?: string
+  age?: string
+  language?: string
+  is_safe?: boolean
+  favicon?: string
+  thumbnail?: string
+  snippets?: string[]
+}
+
+export interface AISearchData {
+  query: string
+  overview: string
+  results: SearchResult[]
+  relevanceScore: number
+  isSafe: boolean
 }

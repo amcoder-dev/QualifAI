@@ -323,6 +323,37 @@ export const AISidekick: React.FC = () => {
                           </div>
                         </div>
                         <div className="flex justify-between items-center">
+                          <span className="text-sm">Relevance:</span>
+                          <div className="flex items-center gap-2">
+                            {!analysisResults || !analysisResults.search ||
+                            analysisResults.search.relevanceScore > 0.7 ? (
+                              <>
+                                <ThumbsUp className="w-4 h-4 text-green-500" />
+                                <span className="text-sm">High</span>
+                              </>
+                            ) : analysisResults.search.relevanceScore > 0.4 ? (
+                              <>
+                                <Meh className="w-4 h-4 text-yellow-500" />
+                                <span className="text-sm">Medium</span>
+                              </>
+                            ) : (
+                              <>
+                                <ThumbsDown className="w-4 h-4 text-red-500" />
+                                <span className="text-sm">Low</span>
+                              </>
+                            )}
+                            {analysisResults && analysisResults.search && (
+                              <span className="text-xs text-gray-500">
+                                (
+                                {Math.round(
+                                  analysisResults.search.relevanceScore * 100
+                                )}
+                                %)
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center">
                           <span className="text-sm">Key Topics:</span>
                           <div className="flex flex-wrap gap-1 justify-end">
                             {(analysisResults?.topics ?? []).map(
