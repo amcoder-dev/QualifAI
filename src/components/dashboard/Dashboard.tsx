@@ -252,7 +252,7 @@ export const Dashboard: React.FC = () => {
       {/* Main grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         {/* Latest leads and sales */}
-        <div className="bg-white rounded-xl shadow-sm lg:col-span-2 border border-gray-200">
+        <div className="bg-white rounded-2xl lg:col-span-2 border border-gray-200">
           <div className="p-6 border-b border-gray-200 bg-gray-50">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-semibold">Latest Leads & Sales</h3>
@@ -314,7 +314,7 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Team Activity */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
           <div className="p-6 border-b border-gray-200 bg-gray-50">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-semibold">Recent Team Activity</h3>
@@ -347,7 +347,7 @@ export const Dashboard: React.FC = () => {
       {/* Sales Pipeline and Tasks */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         {/* Sales Pipeline */}
-        <div className="bg-white rounded-xl shadow-sm lg:col-span-2 border border-gray-200">
+        <div className="bg-white rounded-2xl shadow-sm lg:col-span-2 border border-gray-200">
           <div className="p-6 border-b border-gray-200 bg-gray-50">
             <div className="flex justify-between items-center">
               <div>
@@ -385,7 +385,7 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Tasks and Deadlines */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 ">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 ">
           <div className="p-6 border-b border-gray-200 bg-gray-50">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-semibold">Tasks & Deadlines</h3>
