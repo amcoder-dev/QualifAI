@@ -1,15 +1,15 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutGrid, Users, Mic, Calendar } from 'lucide-react';
+import { Logo } from './Logo';
 
 export const Sidebar: React.FC = () => {
   const location = useLocation();
 
   return (
     <aside className="fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 p-4">
-      <div className="flex items-center gap-2 mb-8">
-        <LayoutGrid className="w-8 h-8" />
-        <h1 className="text-xl font-semibold">Dashboard</h1>
+      <div className="mb-8">
+        <Logo />
       </div>
 
       <nav className="space-y-2">
