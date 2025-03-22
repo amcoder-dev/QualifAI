@@ -1,14 +1,5 @@
-import { createClient, SupabaseClient } from "@supabase/supabase-js"
 import { RequestHandler } from "express"
-
-let supabase: SupabaseClient
-export const initAuth = () => {
-  supabase = createClient(
-    "https://ittrwlucyrfaqaewpoic.supabase.co",
-    // Supabase anonymous key :)
-    process.env.SUPABASE_API_KEY || ""
-  )
-}
+import { initSupabase } from "./supabaseClient"
 
 export const checkAuth: RequestHandler = async (req, res, next) => {
   const authorization = req.headers.authorization || ""
@@ -17,14 +8,33 @@ export const checkAuth: RequestHandler = async (req, res, next) => {
     res.status(401).json({ error: "Missing authorization header" })
     return
   }
+  
   const token = authorization.substring("Bearer ".length)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser(token)
-  if (!user) {
-    console.error("Supabase auth failed.")
-    res.status(401).json({ error: "Invalid authorization header" })
-    return
+  
+  try {
+    const supabase = initSupabase()
+    const { data, error } = await supabase.auth.getUser(token)
+    
+    if (error || !data.user) {
+      console.error("Supabase auth failed:", error)
+      res.status(401).json({ error: "Invalid authorization header" })
+      return
+    }
+    
+    // Add user info to request for later use
+    req.user = data.user
+    next()
+  } catch (e) {
+    console.error("Error in auth check:", e)
+    res.status(500).json({ error: "Authentication service unavailable" })
   }
-  next()
+}
+
+// Add type declaration to augment Express Request
+declare global {
+  namespace Express {
+    interface Request {
+      user?: any
+    }
+  }
 }

@@ -21,18 +21,31 @@ export interface LeadAudio {
 }
 
 export interface LeadData {
-  id: string
-  name: string
-
-  overallScore?: number // 0-1
+  id: string;
+  name: string;
+  overallScore?: number; // 0-1
   osi: {
     // Open Source Intelligence
-    industry: string
-    webPresence?: number // 0-1
-    relevance?: number // 0-1
-    companyWebsite?: string
-  }
-  audios: LeadAudio[]
+    industry: string;
+    relevance?: number; // 0-1
+    companyWebsite?: string;
+  };
+  audios: {
+    date: string;
+    sentiment: {
+      emotion: string;
+      score: number; // 0-1
+    };
+    engagement: {
+      talkToListen: number;
+      turnTakingFrequency: number;
+      interruptions: number;
+      speechPace: number;
+    };
+    topics: string[];
+    actionableItems: string[];
+  }[];
+  evaluation: Record<string, any>;
 }
 
 export interface LeadsContextType {
@@ -78,4 +91,25 @@ export interface AISearchData {
   results: SearchResult[]
   relevanceScore: number
   isSafe: boolean
+}
+
+export interface LeadRecord {
+  lead_id: string;
+  audio_id?: string | null;
+  name: string;
+  overall_score?: number;
+  industry?: string;
+  company_website?: string;
+  osi_relevance?: number;
+  audio_date?: string;
+  sentiment_emotion?: string;
+  sentiment_score?: number;
+  talk_to_listen_ratio?: number;
+  turn_taking_frequency?: number;
+  interruptions?: number;
+  speech_pace?: number;
+  topics?: string[];
+  actionable_items?: string[];
+  created_at?: string;
+  updated_at?: string;
 }

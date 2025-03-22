@@ -2,6 +2,8 @@ import crypto from "crypto"
 import axios from "axios"
 import { z } from "zod"
 import { JigsawStack } from "jigsawstack"
+import { v4 as uuidv4 } from 'uuid'
+import { initSupabase } from "./supabaseClient"
 import type { EngagementData, LeadAudio, SentimentData, SearchResult, AISearchData } from "../src/types"
 
 import {
@@ -25,62 +27,106 @@ export const initExternalAPI = () => {
 }
 
 export const audioRequest = async (audio: Buffer): Promise<LeadAudio> => {
-  console.log("Generating transcript")
-  const transcript = await generateTranscript(audio)
-  console.log("Transcript OK")
-  
-  // Hardcoded company name and industry (To be read from DB)
-  const companyName = "OpenAI"
-  const industry = "AI & Technology"
-  const searchQuery = `Please search something for this company: ${companyName} in this industry: ${industry}`
-  
-  const [sentimentResp, engagementResp, topicResp, actionResp, searchResp] =
-    await Promise.all([
-      sentiment(transcript),
-      engagementPrompts(transcript),
-      topicPrompt(transcript),
-      extractActionsPrompt(transcript),
-      aiSearchRequest(searchQuery), // Add search request with hardcoded query
-    ])
+  try {
+    console.log("Starting audio analysis")
     
-  console.log("All requests completed.")
-  
-  return {
-    date: new Date().toDateString(),
-    sentiment: sentimentResp,
-    engagement: engagementResp,
-    topics: topicResp,
-    actionableItems: actionResp,
-    search: searchResp,
+    // Generate transcript
+    console.log("Generating transcript")
+    const transcript = await generateTranscript(audio)
+    console.log("Transcript generated successfully")
+    
+    // Default company and industry
+    const companyName = "Unknown Company"
+    const industry = "Technology"
+    const searchQuery = `Please search something for this company: ${companyName} in this industry: ${industry}`
+    
+    console.log("Starting parallel analysis tasks")
+    const [sentimentResp, engagementResp, topicResp, actionResp, searchResp] =
+      await Promise.all([
+        sentiment(transcript),
+        engagementPrompts(transcript),
+        topicPrompt(transcript),
+        extractActionsPrompt(transcript),
+        aiSearchRequest(searchQuery),
+      ])
+      
+    console.log("All analysis tasks completed")
+
+    // Generate a unique audio ID
+    const audioId = uuidv4()
+    console.log("Generated audio ID:", audioId)
+    
+    // Insert into Supabase and get the auto-generated lead ID
+    try {
+      console.log("Storing data in Supabase")
+      const supabase = initSupabase()
+      
+      // Insert a new record
+      const { data, error } = await supabase
+        .from('leads')
+        .insert({
+          audio_id: audioId,
+          name: companyName,
+          industry: industry,
+          sentiment_emotion: sentimentResp.emotion,
+          sentiment_score: sentimentResp.score,
+          talk_to_listen_ratio: engagementResp.talkToListen,
+          turn_taking_frequency: engagementResp.turnTakingFrequency,
+          interruptions: engagementResp.interruptions,
+          speech_pace: engagementResp.speechPace,
+          topics: topicResp,
+          actionable_items: actionResp,
+          osi_relevance: searchResp.relevanceScore
+        })
+        .select()
+      
+      if (error) {
+        console.error("Error storing lead data:", error)
+      } else {
+        console.log("Lead data stored successfully:", data)
+      }
+    } catch (error) {
+      console.error("Error inserting lead data:", error)
+    }
+    
+    // Return the response
+    return {
+      date: new Date().toDateString(),
+      sentiment: sentimentResp,
+      engagement: engagementResp,
+      topics: topicResp,
+      actionableItems: actionResp,
+      search: searchResp,
+    }
+  } catch (error) {
+    console.error("Error in audioRequest:", error)
+    throw error
   }
 }
 
 export const generateTranscript = async (audio: Buffer): Promise<string> => {
-  const file = await jigsawStack.store.upload(audio, {
-    filename: crypto.randomBytes(8).toString("hex") + ".mp3",
-    overwrite: true,
-  })
-  const result = await jigsawStack.audio.speech_to_text({
-    file_store_key: file.key,
-    // by_speaker: true, // by_speaker was broken.
-  })
-  /*
-  return result
-    .speakers!.map(
-      (x) =>
-        x.speaker +
-        "(" +
-        x.timestamp[0] +
-        " - " +
-        x.timestamp[1] +
-        "s): " +
-        x.text
-    )
-    .join("\n")
-  */
-  return result.chunks
-    .map((x) => x.timestamp[0] + " - " + x.timestamp[1] + "s: " + x.text)
-    .join("\n")
+  try {
+    console.log("Uploading audio file for transcription")
+    const file = await jigsawStack.store.upload(audio, {
+      filename: crypto.randomBytes(8).toString("hex") + ".mp3",
+      overwrite: true,
+    })
+    
+    console.log("File uploaded with key:", file.key)
+    console.log("Requesting speech-to-text conversion")
+    
+    const result = await jigsawStack.audio.speech_to_text({
+      file_store_key: file.key,
+    })
+    
+    console.log("Speech-to-text conversion complete")
+    return result.chunks
+      .map((x) => x.timestamp[0] + " - " + x.timestamp[1] + "s: " + x.text)
+      .join("\n")
+  } catch (error) {
+    console.error("Error in generateTranscript:", error)
+    throw error
+  }
 }
 
 const numberOr = (x: string | null, fallback: number) => {
@@ -90,12 +136,12 @@ const numberOr = (x: string | null, fallback: number) => {
 }
 
 export const sentiment = async (transcript: string): Promise<SentimentData> => {
-  console.log("Generating sentiment")
+  console.log("Generating sentiment analysis")
   if (transcript.length > 2000) {
     transcript = transcript.slice(0, 2000)
   }
   const sentiment = await jigsawStack.sentiment({ text: transcript })
-  console.log("Sentiment done")
+  console.log("Sentiment analysis complete")
   if (!sentiment.success) {
     return { score: 0.5, emotion: "Unknown" }
   }
@@ -108,7 +154,7 @@ export const sentiment = async (transcript: string): Promise<SentimentData> => {
 export const engagementPrompts = async (
   transcript: string
 ): Promise<EngagementData> => {
-  console.log("Generating engagement")
+  console.log("Generating engagement metrics")
   const [overtalkResp, speechResp, talkToListenResp, turnTakingFrequencyResp] =
     await Promise.all([
       sendPrompt(overtalk + transcript),
@@ -116,7 +162,7 @@ export const engagementPrompts = async (
       sendPrompt(talkToListen + transcript),
       sendPrompt(turnTakingFrequency + transcript),
     ])
-  console.log("Engagement done")
+  console.log("Engagement metrics generated")
   return {
     interruptions: numberOr(overtalkResp, 0),
     speechPace: numberOr(speechResp, 1),
@@ -130,6 +176,7 @@ export const jsonClean = (str: string | null) =>
 
 export const topicPrompt = async (transcript: string): Promise<string[]> => {
   try {
+    console.log("Extracting topics")
     return z
       .object({
         topics: z.string().array(),
@@ -141,7 +188,7 @@ export const topicPrompt = async (transcript: string): Promise<string[]> => {
         )
       ).topics
   } catch (e) {
-    console.error(e)
+    console.error("Error extracting topics:", e)
     return []
   }
 }
@@ -150,6 +197,7 @@ export const extractActionsPrompt = async (
   transcript: string
 ): Promise<string[]> => {
   try {
+    console.log("Extracting actionable items")
     return z
       .object({
         actions: z.string().array(),
@@ -161,13 +209,14 @@ export const extractActionsPrompt = async (
         )
       ).actions
   } catch (e) {
-    console.error(e)
+    console.error("Error extracting actions:", e)
     return []
   }
 }
 
 export const sendPrompt = async (prompt: string): Promise<string | null> => {
   try {
+    console.log("Sending prompt to OpenAI")
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       {
@@ -227,8 +276,7 @@ export const aiSearchRequest = async (query: string): Promise<AISearchData> => {
         .slice(0, 5) // Get top 5 snippets
         .join("\n\n");
       
-      console.log("Extracted snippets sample:", 
-        snippets.substring(0, 100) + (snippets.length > 100 ? "..." : ""))
+      console.log("Extracted snippets")
     } catch (e) {
       console.error("Error extracting snippets:", e)
       snippets = "No snippets available";
@@ -242,7 +290,7 @@ export const aiSearchRequest = async (query: string): Promise<AISearchData> => {
       );
       
       const relevanceResponse = await sendPrompt(modifiedPrompt);
-      console.log("Raw relevance response:", relevanceResponse);
+      console.log("Relevance response received")
       
       // Extract Relevance Score
       if (relevanceResponse) {
