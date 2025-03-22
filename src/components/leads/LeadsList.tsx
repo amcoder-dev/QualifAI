@@ -26,7 +26,7 @@ export const LeadsList: React.FC = () => {
         return getLeadsWithAudioInfo(leads.map((x) => x.id))
       })
       .then((leadsWithAudio) => setLeads(leadsWithAudio))
-  }, [from, supabase])
+  }, [from])
 
   const goToFirst = () => {
     setFrom(0)

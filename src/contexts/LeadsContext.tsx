@@ -45,6 +45,9 @@ export const LeadsProvider: React.FC<{ children: ReactNode }> = ({
   }
 
   const getLeads = async (ids: number[]) => {
+    if (ids.every((x) => !!leadsCache[x])) {
+      return ids.map((x) => leadsCache[x])
+    }
     const { data, error } = await supabase.from("leads").select().in("id", ids)
     if (error) throw error
     const lead = data.map(convertLead)
@@ -87,7 +90,7 @@ export const LeadsProvider: React.FC<{ children: ReactNode }> = ({
   }
 
   const getLeadsWithAudioInfo = async (ids: number[]): Promise<LeadData[]> => {
-    const [{ data, error }] = await Promise.all([
+    const [{ data, error }, leads] = await Promise.all([
       supabase
         .from("lead_audios")
         .select()
@@ -97,12 +100,10 @@ export const LeadsProvider: React.FC<{ children: ReactNode }> = ({
     ])
     if (error) throw error
     let result: Record<number, LeadData> = {}
+    for (const lead of leads) {
+      result[lead.id] = lead
+    }
     for (const x of data) {
-      if (!result[x.lead_id])
-        result[x.lead_id] = {
-          ...leadsCache[x.lead_id],
-          audios: [],
-        }
       result[x.lead_id].audios.push({
         date: new Date(x.audio_date as string).toLocaleDateString(),
         sentiment: {
