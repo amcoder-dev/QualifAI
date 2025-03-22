@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutGrid, Users, Mic } from 'lucide-react';
+import { LayoutGrid, Users, Mic, Calendar } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
   const location = useLocation();
@@ -27,13 +27,24 @@ export const Sidebar: React.FC = () => {
         <Link
           to="/leads"
           className={`flex items-center gap-3 px-4 py-2 rounded-lg ${
-            location.pathname === '/leads'
+            location.pathname.includes('/leads')
               ? 'bg-indigo-600 text-white'
               : 'text-gray-600 hover:bg-gray-100'
           }`}
         >
           <Users className="w-5 h-5" />
           <span>Leads</span>
+        </Link>
+        <Link
+          to="/calendar"
+          className={`flex items-center gap-3 px-4 py-2 rounded-lg ${
+            location.pathname === '/calendar'
+              ? 'bg-indigo-600 text-white'
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          <Calendar className="w-5 h-5" />
+          <span>Calendar</span>
         </Link>
         <Link
           to="/ai-sidekick"

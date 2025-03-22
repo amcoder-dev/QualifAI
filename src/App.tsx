@@ -13,6 +13,7 @@ import { Dashboard } from './components/dashboard/Dashboard';
 import { LeadsList } from './components/leads/LeadsList';
 import { LeadDetail } from './components/leads/LeadDetail';
 import { AISidekick } from './components/ai-sidekick/AISidekick';
+import { Calendar } from './components/calendar/Calendar';
 
 const App: React.FC = () => {
   return (
@@ -50,6 +51,17 @@ const App: React.FC = () => {
                   <>
                     <Sidebar />
                     <LeadDetail />
+                  </>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/calendar"
+              element={
+                <ProtectedRoute>
+                  <>
+                    <Sidebar />
+                    <Calendar />
                   </>
                 </ProtectedRoute>
               }
