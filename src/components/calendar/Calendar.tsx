@@ -593,9 +593,12 @@ export const Calendar: React.FC = () => {
             <p className="text-gray-600">Manage your schedule and tasks</p>
           </div>
           <div className="flex items-center gap-4">
-            <button 
+          <button 
               onClick={today}
-              className="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50"
+              className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-[#403DA1] to-[#635FC1] text-white rounded-lg 
+                        shadow-sm hover:shadow-lg hover:from-[#373490] hover:to-[#5652B0] hover:-translate-y-0.5 
+                        active:translate-y-0 active:shadow-md transition-all duration-200 ease-in-out
+                        flex items-center gap-1"
             >
               Today
             </button>
