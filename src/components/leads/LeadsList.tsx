@@ -17,7 +17,7 @@ export const LeadsList: React.FC = () => {
     name: "",
     type: "",
   })
-  const { getFirstNLeads, getLeadsWithAudioInfo, leadCount } =
+  const { addLead, getFirstNLeads, getLeadsWithAudioInfo, leadCount } =
     useContext(LeadsContext)
   useEffect(() => {
     getFirstNLeads(from, 10)
@@ -54,6 +54,13 @@ export const LeadsList: React.FC = () => {
       name: "",
       type: "",
     })
+    addLead()
+    getFirstNLeads(from, 10)
+      .then((leads) => {
+        setLeads(leads)
+        return getLeadsWithAudioInfo(leads.map((x) => x.id))
+      })
+      .then((leadsWithAudio) => setLeads(leadsWithAudio))
   }
 
   const handleInputChange = (

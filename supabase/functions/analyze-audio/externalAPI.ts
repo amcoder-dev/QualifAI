@@ -1,14 +1,14 @@
-import crypto from "crypto"
-import axios from "axios"
-import { z } from "zod"
-import { JigsawStack } from "jigsawstack"
-import { initSupabase } from "./supabaseClient"
+import "jsr:@supabase/functions-js/edge-runtime.d.ts"
+import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.39.7"
+import { JigsawStack } from "https://esm.sh/jigsawstack@0.0.28"
+import { z } from "https://esm.sh/zod@3.24.2"
+import axios from "https://esm.sh/axios@1.8.4"
 import type {
   EngagementData,
   SentimentData,
   AISearchData,
   AudioAnalysisResult,
-} from "../src/types"
+} from "../../../src/types"
 
 import {
   extractActions,
@@ -18,20 +18,30 @@ import {
   topicExtraction,
   turnTakingFrequency,
   calculateAISearchRelevantScorePrompt,
-} from "./prompt"
+} from "./prompt.ts"
 
 let jigsawStack: ReturnType<typeof JigsawStack>
 let OPENAI_API_KEY: string | undefined
 export const initExternalAPI = () => {
-  let { JIGSAW_API_KEY, OPENAI_API_KEY: openAI } = process.env
-  OPENAI_API_KEY = openAI
+  OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") ?? ""
   jigsawStack = JigsawStack({
-    apiKey: JIGSAW_API_KEY,
+    apiKey: Deno.env.get("JIGSAW_API_KEY") ?? "",
   })
 }
 
+const generateRandomHex = (length: number): string => {
+  const randomBytes = new Uint8Array(length / 2)
+  crypto.getRandomValues(randomBytes)
+
+  // Convert the random bytes to a hex string
+  return Array.from(randomBytes, (byte) =>
+    byte.toString(16).padStart(2, "0")
+  ).join("")
+}
+
 export const audioRequest = async (
-  audio: Buffer
+  supabase: SupabaseClient,
+  audio: Blob
 ): Promise<AudioAnalysisResult> => {
   try {
     console.log("Starting audio analysis")
@@ -51,11 +61,10 @@ export const audioRequest = async (
       ])
     console.log("All analysis tasks completed")
 
-    let audioID = crypto.randomBytes(16).toString("hex")
+    let audioID = generateRandomHex(32)
     // Insert into Supabase and get the auto-generated lead ID
     try {
       console.log("Storing data in Supabase")
-      const supabase = initSupabase()
 
       // Insert a new record
       const { data, error } = await supabase
@@ -95,11 +104,12 @@ export const audioRequest = async (
   }
 }
 
-const generateTranscript = async (audio: Buffer): Promise<string> => {
+const generateTranscript = async (audio: Blob): Promise<string> => {
   try {
     console.log("Uploading audio file for transcription")
+    const filename = generateRandomHex(32) + ".mp3"
     const file = await jigsawStack.store.upload(audio, {
-      filename: crypto.randomBytes(8).toString("hex") + ".mp3",
+      filename: filename,
       overwrite: true,
     })
 
@@ -107,7 +117,7 @@ const generateTranscript = async (audio: Buffer): Promise<string> => {
     console.log("Requesting speech-to-text conversion")
 
     const result = await jigsawStack.audio.speech_to_text({
-      file_store_key: file.key,
+      file_store_key: file.key || filename,
     })
 
     console.log("Speech-to-text conversion complete")

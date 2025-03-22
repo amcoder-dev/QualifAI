@@ -100,7 +100,7 @@ export interface LeadsContextType {
   getLeads: (ids: number[]) => Promise<LeadData[]>
   getLeadsWithAudioInfo: (ids: number[]) => Promise<LeadData[]>
   getFirstNLeads: (from: number, count: number) => Promise<LeadData[]>
-  addLead: (data: LeadData) => void
+  addLead: () => void
   updateLead: (id: number, data: Partial<LeadData>) => void
   deleteLead: (id: number) => void
 }

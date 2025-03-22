@@ -12,8 +12,7 @@ import {
 } from "lucide-react"
 import { LeadsContext } from "../../contexts/LeadsContext"
 import { initialLeads } from "../../data/initialData"
-import axios from "axios"
-import { AudioAnalysisResult } from "../../types"
+import { AudioAnalysisResult, LeadData } from "../../types"
 import { useAuth } from "../../hooks/useAuth"
 
 export const AISidekick: React.FC = () => {
@@ -22,6 +21,7 @@ export const AISidekick: React.FC = () => {
   const [isRecording, setIsRecording] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [leadsList, setLeadsList] = useState<LeadData[]>([])
   const [showLeadsDropdown, setShowLeadsDropdown] = useState(false)
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [selectedLead, setSelectedLead] = useState<number | null>(null)
@@ -33,7 +33,11 @@ export const AISidekick: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const animationRef = useRef<number | null>(null)
-  const { updateLead } = useContext(LeadsContext)
+  const { getFirstNLeads, updateLead } = useContext(LeadsContext)
+
+  useEffect(() => {
+    getFirstNLeads(0, 1000).then((x) => setLeadsList(x))
+  }, [supabase])
 
   // Simulate audio volume and tone changes
   useEffect(() => {
@@ -91,16 +95,9 @@ export const AISidekick: React.FC = () => {
       if (!user) throw new Error("User is logged out")
       const formData = new FormData()
       formData.append("file", file)
-      const resp = await axios.post<AudioAnalysisResult>(
-        `${import.meta.env.VITE_SERVER_URL}/api/analyze_audio`,
-        formData,
-        {
-          headers: {
-            "Content-Type": `multipart/form-data`,
-            Authorization: `Bearer ${user.accessToken}`,
-          },
-        }
-      )
+      const resp = await supabase.functions.invoke("analyze-audio", {
+        body: formData,
+      })
       setAnalysisResults(resp.data)
       setIsAnalyzing(false)
     } catch (e) {
@@ -113,7 +110,7 @@ export const AISidekick: React.FC = () => {
       const { error } = await supabase
         .from("lead_audios")
         .update({ lead_id: selectedLead })
-        .eq("id", analysisResults.audioID)
+        .eq("audio_id", analysisResults.audioID)
       if (error) throw error
       const selectedLeadData = initialLeads.find((l) => l.id === selectedLead)
       if (selectedLeadData) {
@@ -282,7 +279,7 @@ export const AISidekick: React.FC = () => {
                           <h3 className="text-sm font-medium p-2">
                             Select a Lead
                           </h3>
-                          {initialLeads.map((lead) => (
+                          {leadsList.map((lead) => (
                             <button
                               key={lead.id}
                               className="w-full text-left flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg"

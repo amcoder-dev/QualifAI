@@ -62,7 +62,7 @@ export const LeadsProvider: React.FC<{ children: ReactNode }> = ({
       .select("*", { count: "exact", head: true })
       .then(({ count, error }) => {
         if (error) throw error
-        if (!count) throw new Error("count not returned")
+        if (count == null) throw new Error("count not returned")
         setLeadCount(count)
       })
   }, [supabase])
@@ -174,11 +174,8 @@ export const LeadsProvider: React.FC<{ children: ReactNode }> = ({
     return results
   }
 
-  const addLead = (data: LeadData) => {
-    setLeadsCache({
-      ...leadsCache,
-      [data.id]: data,
-    })
+  const addLead = () => {
+    setFirstIDCache({})
   }
 
   const deleteLead = (id: number) => {

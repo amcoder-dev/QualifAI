@@ -7,7 +7,7 @@ import axios from "axios"
 import { useAuth } from "../../hooks/useAuth"
 
 export const LeadDetail: React.FC = () => {
-  const { user } = useAuth()
+  const { user, supabase } = useAuth()
   const { id } = useParams()
   const { getLeadsWithAudioInfo, updateLead } = useContext(LeadsContext)
   const [lead, setLead] = useState<LeadData | null>()
@@ -42,16 +42,11 @@ export const LeadDetail: React.FC = () => {
     : 0
 
   const refreshOsi = async () => {
-    const resp = await axios.post<AISearchData>(
-      `${import.meta.env.VITE_SERVER_URL}/api/search`,
-      { lead_id: lead?.id },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${user?.accessToken}`,
-        },
-      }
-    )
+    const resp = await supabase.functions.invoke("search", {
+      method: "POST",
+      body: { lead_id: lead?.id },
+    })
+    if (resp.error) throw resp.error
     lead!.osi = {
       ...lead!.osi,
       overview: resp.data.overview,
