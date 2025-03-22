@@ -121,6 +121,7 @@ export const LeadsProvider: React.FC<{ children: ReactNode }> = ({
         industry: data.osi_industry as string,
         relevance: data.osi_relevance as number | undefined,
         companyWebsite: data.company_website as string | undefined,
+        overview: data.osi_overview as string | undefined,
       },
       audios: [],
       evaluation: data.evaluation,
@@ -190,10 +191,10 @@ export const LeadsProvider: React.FC<{ children: ReactNode }> = ({
   const updateLead = (id: number, data: Partial<LeadData>) => {
     setLeadsCache({
       ...leadsCache,
-      [id]: {
+      [id]: recalculate({
         ...leadsCache[id],
         ...data,
-      },
+      }),
     })
   }
 

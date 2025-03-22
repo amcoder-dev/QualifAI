@@ -72,6 +72,7 @@ export interface LeadData {
   osi: {
     // Open Source Intelligence
     industry: string
+    overview?: string
     relevance?: number // 0-1
     webPresence?: number // 0-1
     companyWebsite?: string
@@ -136,9 +137,7 @@ export interface SearchResult {
 }
 
 export interface AISearchData {
-  query: string
   overview: string
-  results: SearchResult[]
   relevanceScore: number
-  isSafe: boolean
+  websiteURL: string
 }

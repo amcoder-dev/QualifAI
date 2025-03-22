@@ -62,104 +62,43 @@ app.post(
   }
 )
 
-// Get lead data endpoint - now using the auto-generated lead_id
-app.get("/api/leads/:id", checkAuth, async (req, res) => {
-  const leadId = req.params.id
-
-  try {
-    const supabase = initSupabase()
-    const { data, error } = await supabase
-      .from("leads")
-      .select("*")
-      .eq("lead_id", leadId)
-      .single()
-
-    if (error) {
-      console.error("Error fetching lead:", error)
-      res.status(500).json({ error: "Failed to fetch lead data" })
-      return
-    }
-
-    if (!data) {
-      res.status(404).json({ error: "Lead not found" })
-      return
-    }
-
-    // Format the response to match the expected LeadData structure
-    const leadResponse = {
-      id: data.lead_id,
-      name: data.name || "Unknown Lead",
-      overallScore: data.overall_score,
-      osi: {
-        industry: data.industry || "Unknown",
-        relevance: data.osi_relevance,
-        companyWebsite: data.company_website,
-      },
-      audios: [
-        {
-          date: data.audio_date,
-          sentiment: {
-            emotion: data.sentiment_emotion,
-            score: data.sentiment_score,
-          },
-          engagement: {
-            talkToListen: data.talk_to_listen_ratio,
-            turnTakingFrequency: data.turn_taking_frequency,
-            interruptions: data.interruptions,
-            speechPace: data.speech_pace,
-          },
-          topics: data.topics || [],
-          actionableItems: data.actionable_items || [],
-        },
-      ],
-      evaluation: {},
-    }
-
-    res.json(leadResponse)
-    return
-  } catch (e) {
-    console.error("Server error:", e)
-    res.status(500).json({ error: "Server error. Please try again later." })
-    return
-  }
-})
-
-// Get all leads endpoint
-app.get("/api/leads", checkAuth, async (_, res) => {
-  try {
-    const supabase = initSupabase()
-    const { data, error } = await supabase
-      .from("leads")
-      .select("lead_id, name, industry, created_at")
-      .order("created_at", { ascending: false })
-
-    if (error) {
-      console.error("Error fetching leads:", error)
-      res.status(500).json({ error: "Failed to fetch leads" })
-      return
-    }
-
-    res.json(data || [])
-    return
-  } catch (e) {
-    console.error("Server error:", e)
-    res.status(500).json({ error: "Server error. Please try again later." })
-    return
-  }
-})
-
 // Standalone AI Search route
 app.post("/api/search", checkAuth, async (req, res) => {
-  const { query } = req.body
+  const { lead_id } = req.body
 
-  if (!query || typeof query !== "string") {
+  if (!lead_id || typeof lead_id !== "number") {
+    res.status(400).json({ error: "Valid search query is required." })
+    return
+  }
+
+  const { data, error } = await initSupabase()
+    .from("leads")
+    .select()
+    .eq("id", lead_id)
+  if (error) {
+    console.error("Search error:", error)
+    res.status(500).json({ error: "Search failed. Please try again later." })
+    return
+  }
+  if (data.length === 0) {
+    console.error("Invalid lead ID")
     res.status(400).json({ error: "Valid search query is required." })
     return
   }
 
   try {
-    const searchResults = await aiSearchRequest(query)
+    const searchResults = await aiSearchRequest(data[0].name as string)
     res.json(searchResults)
+    initSupabase()
+      .from("leads")
+      .update({
+        osi_relevance: searchResults.relevanceScore,
+        osi_company_website: searchResults.websiteURL,
+      })
+      .eq("id", lead_id)
+      .then(({ error }) => {
+        if (error) console.error(error)
+      })
     return
   } catch (e) {
     console.error("Search error:", e)

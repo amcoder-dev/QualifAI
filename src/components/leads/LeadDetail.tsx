@@ -1,11 +1,15 @@
 import React, { useContext, useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 import { LeadsContext } from "../../contexts/LeadsContext"
-import { LeadData, scoreBackground, scoreName } from "../../types"
+import { AISearchData, LeadData, scoreBackground, scoreName } from "../../types"
+import { RefreshCw } from "lucide-react"
+import axios from "axios"
+import { useAuth } from "../../hooks/useAuth"
 
 export const LeadDetail: React.FC = () => {
+  const { user } = useAuth()
   const { id } = useParams()
-  const { getLeadsWithAudioInfo } = useContext(LeadsContext)
+  const { getLeadsWithAudioInfo, updateLead } = useContext(LeadsContext)
   const [lead, setLead] = useState<LeadData | null>()
   const [error, setError] = useState(false)
   useEffect(() => {
@@ -37,6 +41,33 @@ export const LeadDetail: React.FC = () => {
     ? Math.round(lead.weights.relevance * lead.osi.relevance! * 100)
     : 0
 
+  const refreshOsi = async () => {
+    const resp = await axios.post<AISearchData>(
+      `${import.meta.env.VITE_SERVER_URL}/api/search`,
+      { lead_id: lead?.id },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user?.accessToken}`,
+        },
+      }
+    )
+    lead!.osi = {
+      ...lead!.osi,
+      overview: resp.data.overview,
+      relevance: resp.data.relevanceScore,
+      companyWebsite: resp.data.websiteURL,
+    }
+    updateLead(lead!.id, {
+      osi: {
+        ...lead!.osi,
+        overview: resp.data.overview,
+        relevance: resp.data.relevanceScore,
+        companyWebsite: resp.data.websiteURL,
+      },
+    })
+  }
+
   if (!lead) {
     if (error) return <div className="ml-64 p-8">Lead not found</div>
     return <div className="ml-64 p-8">Fetching information on the lead</div>
@@ -47,7 +78,12 @@ export const LeadDetail: React.FC = () => {
       <div className="bg-white rounded-xl shadow-sm p-6">
         <div className="flex items-center gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-semibold">{lead.name}</h1>
+            <h1 className="text-2xl font-semibold flex gap-2">
+              <span>{lead.name}</span>
+              <button onClick={refreshOsi}>
+                <RefreshCw className="size-4" />
+              </button>
+            </h1>
             <p className="text-gray-500">{lead.osi.industry}</p>
           </div>
         </div>
@@ -125,7 +161,7 @@ export const LeadDetail: React.FC = () => {
           <div className="bg-gray-50 rounded-lg p-6">
             <h2 className="text-lg font-semibold mb-4">Lead Status</h2>
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
+              <div className="flex text-right justify-between items-center">
                 <span>Website</span>
                 <a
                   href={lead.osi.companyWebsite}
@@ -164,6 +200,17 @@ export const LeadDetail: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {lead.osi?.overview ? (
+            <div className="bg-gray-50 rounded-lg p-6 col-span-2">
+              <h2 className="text-lg font-semibold mb-4">Overview</h2>
+              {lead.osi.overview.split("\n").map((x) => (
+                <p className="mb-2">{x}</p>
+              ))}
+            </div>
+          ) : (
+            <></>
+          )}
         </div>
       </div>
     </main>

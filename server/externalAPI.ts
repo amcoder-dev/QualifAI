@@ -95,7 +95,7 @@ export const audioRequest = async (
   }
 }
 
-export const generateTranscript = async (audio: Buffer): Promise<string> => {
+const generateTranscript = async (audio: Buffer): Promise<string> => {
   try {
     console.log("Uploading audio file for transcription")
     const file = await jigsawStack.store.upload(audio, {
@@ -126,7 +126,7 @@ const numberOr = (x: string | null, fallback: number) => {
   return resp
 }
 
-export const sentiment = async (transcript: string): Promise<SentimentData> => {
+const sentiment = async (transcript: string): Promise<SentimentData> => {
   console.log("Generating sentiment analysis")
   if (transcript.length > 2000) {
     transcript = transcript.slice(0, 2000)
@@ -142,7 +142,7 @@ export const sentiment = async (transcript: string): Promise<SentimentData> => {
   }
 }
 
-export const engagementPrompts = async (
+const engagementPrompts = async (
   transcript: string
 ): Promise<EngagementData> => {
   console.log("Generating engagement metrics")
@@ -162,10 +162,10 @@ export const engagementPrompts = async (
   }
 }
 
-export const jsonClean = (str: string | null) =>
+const jsonClean = (str: string | null) =>
   str?.replace("```json", "")?.replace("```", "")
 
-export const topicPrompt = async (transcript: string): Promise<string[]> => {
+const topicPrompt = async (transcript: string): Promise<string[]> => {
   try {
     console.log("Extracting topics")
     return z
@@ -184,9 +184,7 @@ export const topicPrompt = async (transcript: string): Promise<string[]> => {
   }
 }
 
-export const extractActionsPrompt = async (
-  transcript: string
-): Promise<string[]> => {
+const extractActionsPrompt = async (transcript: string): Promise<string[]> => {
   try {
     console.log("Extracting actionable items")
     return z
@@ -205,7 +203,7 @@ export const extractActionsPrompt = async (
   }
 }
 
-export const sendPrompt = async (prompt: string): Promise<string | null> => {
+const sendPrompt = async (prompt: string): Promise<string | null> => {
   try {
     console.log("Sending prompt to OpenAI")
     const response = await axios.post(
@@ -254,11 +252,9 @@ export const aiSearchRequest = async (query: string): Promise<AISearchData> => {
     if (!searchResponse || !searchResponse.success) {
       console.error("Search failed or returned invalid response")
       return {
-        query,
         overview: "Search failed to return results.",
-        results: [],
         relevanceScore: 0.5,
-        isSafe: true,
+        websiteURL: "",
       }
     }
 
@@ -320,21 +316,17 @@ export const aiSearchRequest = async (query: string): Promise<AISearchData> => {
     }
 
     return {
-      query,
       overview: searchResponse.ai_overview || "Information about " + query,
-      results: searchResponse.results || [],
       relevanceScore,
-      isSafe: searchResponse.is_safe || true,
+      websiteURL: searchResponse.results[0].url,
     }
   } catch (error) {
     console.error("Error with AI Search:", error)
     // Return fallback data instead of throwing
     return {
-      query,
-      overview: "Information about " + query,
-      results: [],
+      overview: "Information unavailable.",
       relevanceScore: 0.5,
-      isSafe: true,
+      websiteURL: "",
     }
   }
 }
