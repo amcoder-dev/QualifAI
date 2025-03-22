@@ -76,6 +76,12 @@ export const LeadsTable: React.FC<LeadsTableProps> = ({ leads }) => {
                   <td className="p-4 text-gray-500">N/A</td>
                 </>
               )}
+              <td>
+                <div className="flex gap-2 text-gray-500">
+                  <FileAudio className="ml-3 w-6 h-6" />
+                  {lead.audios.length}
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>

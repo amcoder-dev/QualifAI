@@ -3,7 +3,7 @@ import { LeadData } from "../types"
 // Initial leads data
 export const initialLeads: LeadData[] = [
   {
-    id: "1",
+    id: 1,
     name: "TechVista Solutions",
     overallScore: 0.92,
     osi: {
@@ -19,11 +19,17 @@ export const initialLeads: LeadData[] = [
           emotion: "positive",
           score: 0.88,
         },
+        engagement: {
+          talkToListen: 0.5,
+          turnTakingFrequency: 0.5,
+          interruptions: 5,
+          speechPace: 2.34,
+        },
         topics: ["implementation", "support", "pricing"],
         actionableItems: [
           "Schedule implementation timeline review",
           "Provide enhanced support documentation",
-          "Present enterprise pricing options"
+          "Present enterprise pricing options",
         ],
       },
       {
@@ -32,16 +38,23 @@ export const initialLeads: LeadData[] = [
           emotion: "neutral",
           score: 0.52,
         },
+        engagement: {
+          talkToListen: 0.5,
+          turnTakingFrequency: 0.5,
+          interruptions: 5,
+          speechPace: 2.34,
+        },
         topics: ["technical specifications", "integration"],
         actionableItems: [
           "Prepare technical architecture document",
-          "Demo API integration capabilities"
+          "Demo API integration capabilities",
         ],
-      }
+      },
     ],
+    evaluation: {},
   },
   {
-    id: "2",
+    id: 2,
     name: "NexaCore Industries",
     overallScore: 0.78,
     osi: {
@@ -57,17 +70,24 @@ export const initialLeads: LeadData[] = [
           emotion: "positive",
           score: 0.79,
         },
+        engagement: {
+          talkToListen: 0.5,
+          turnTakingFrequency: 0.5,
+          interruptions: 5,
+          speechPace: 2.34,
+        },
         topics: ["automation", "ROI", "implementation"],
         actionableItems: [
           "Provide ROI calculator",
           "Share automation case studies",
-          "Draft implementation roadmap"
+          "Draft implementation roadmap",
         ],
-      }
+      },
     ],
+    evaluation: {},
   },
   {
-    id: "3",
+    id: 3,
     name: "Quantum Financial Group",
     overallScore: 0.89,
     osi: {
@@ -83,11 +103,17 @@ export const initialLeads: LeadData[] = [
           emotion: "positive",
           score: 0.91,
         },
+        engagement: {
+          talkToListen: 0.5,
+          turnTakingFrequency: 0.5,
+          interruptions: 5,
+          speechPace: 2.34,
+        },
         topics: ["security", "compliance", "data handling"],
         actionableItems: [
           "Share security certifications",
           "Prepare compliance documentation",
-          "Schedule data architecture review"
+          "Schedule data architecture review",
         ],
       },
       {
@@ -96,16 +122,23 @@ export const initialLeads: LeadData[] = [
           emotion: "positive",
           score: 0.85,
         },
+        engagement: {
+          talkToListen: 0.5,
+          turnTakingFrequency: 0.5,
+          interruptions: 5,
+          speechPace: 2.34,
+        },
         topics: ["user management", "reporting"],
         actionableItems: [
           "Demo advanced reporting features",
-          "Present user hierarchy management"
+          "Present user hierarchy management",
         ],
-      }
+      },
     ],
+    evaluation: {},
   },
   {
-    id: "4",
+    id: 4,
     name: "EcoSphere Innovations",
     overallScore: 0.71,
     osi: {
@@ -121,17 +154,24 @@ export const initialLeads: LeadData[] = [
           emotion: "mixed",
           score: 0.49,
         },
+        engagement: {
+          talkToListen: 0.5,
+          turnTakingFrequency: 0.5,
+          interruptions: 5,
+          speechPace: 2.34,
+        },
         topics: ["pricing", "sustainability metrics", "reporting"],
         actionableItems: [
           "Adjust pricing structure for non-profit sector",
           "Enhance sustainability reporting features",
-          "Provide metrics calculation methodology"
+          "Provide metrics calculation methodology",
         ],
-      }
+      },
     ],
+    evaluation: {},
   },
   {
-    id: "5",
+    id: 5,
     name: "MediSync Healthcare",
     overallScore: 0.94,
     osi: {
@@ -147,30 +187,43 @@ export const initialLeads: LeadData[] = [
           emotion: "positive",
           score: 0.93,
         },
+        engagement: {
+          talkToListen: 0.5,
+          turnTakingFrequency: 0.5,
+          interruptions: 5,
+          speechPace: 2.34,
+        },
         topics: ["HIPAA compliance", "patient data", "integration"],
         actionableItems: [
           "Provide HIPAA compliance documentation",
           "Demo patient data security features",
-          "Present EMR integration capabilities"
+          "Present EMR integration capabilities",
         ],
       },
       {
         date: "28 January 2023",
         sentiment: {
           emotion: "positive",
-          score: 0.90,
+          score: 0.9,
+        },
+        engagement: {
+          talkToListen: 0.5,
+          turnTakingFrequency: 0.5,
+          interruptions: 5,
+          speechPace: 2.34,
         },
         topics: ["implementation", "training", "support"],
         actionableItems: [
           "Draft implementation timeline",
           "Prepare staff training program",
-          "Outline support SLAs"
+          "Outline support SLAs",
         ],
-      }
+      },
     ],
+    evaluation: {},
   },
   {
-    id: "6",
+    id: 6,
     name: "Velocity Logistics",
     overallScore: 0.83,
     osi: {
@@ -186,11 +239,17 @@ export const initialLeads: LeadData[] = [
           emotion: "positive",
           score: 0.81,
         },
+        engagement: {
+          talkToListen: 0.5,
+          turnTakingFrequency: 0.5,
+          interruptions: 5,
+          speechPace: 2.34,
+        },
         topics: ["route optimization", "fleet management", "reporting"],
         actionableItems: [
           "Demo route optimization algorithms",
           "Present fleet management dashboard",
-          "Customize reporting templates"
+          "Customize reporting templates",
         ],
       },
       {
@@ -199,16 +258,23 @@ export const initialLeads: LeadData[] = [
           emotion: "neutral",
           score: 0.55,
         },
+        engagement: {
+          talkToListen: 0.5,
+          turnTakingFrequency: 0.5,
+          interruptions: 5,
+          speechPace: 2.34,
+        },
         topics: ["mobile access", "pricing"],
         actionableItems: [
           "Provide mobile app demonstration",
-          "Adjust pricing for volume needs"
+          "Adjust pricing for volume needs",
         ],
-      }
+      },
     ],
+    evaluation: {},
   },
   {
-    id: "7",
+    id: 7,
     name: "Horizon Education Partners",
     overallScore: 0.76,
     osi: {
@@ -224,17 +290,24 @@ export const initialLeads: LeadData[] = [
           emotion: "positive",
           score: 0.77,
         },
+        engagement: {
+          talkToListen: 0.5,
+          turnTakingFrequency: 0.5,
+          interruptions: 5,
+          speechPace: 2.34,
+        },
         topics: ["student data", "integration", "reporting"],
         actionableItems: [
           "Present student data management features",
           "Demo LMS integration capabilities",
-          "Customize academic reporting"
+          "Customize academic reporting",
         ],
-      }
+      },
     ],
+    evaluation: {},
   },
   {
-    id: "8",
+    id: 8,
     name: "Fusion Retail Concepts",
     overallScore: 0.88,
     osi: {
@@ -250,11 +323,17 @@ export const initialLeads: LeadData[] = [
           emotion: "positive",
           score: 0.87,
         },
+        engagement: {
+          talkToListen: 0.5,
+          turnTakingFrequency: 0.5,
+          interruptions: 5,
+          speechPace: 2.34,
+        },
         topics: ["inventory management", "customer data", "omnichannel"],
         actionableItems: [
           "Demo inventory forecasting features",
           "Present customer data analytics",
-          "Showcase omnichannel capabilities"
+          "Showcase omnichannel capabilities",
         ],
       },
       {
@@ -263,17 +342,24 @@ export const initialLeads: LeadData[] = [
           emotion: "positive",
           score: 0.84,
         },
+        engagement: {
+          talkToListen: 0.5,
+          turnTakingFrequency: 0.5,
+          interruptions: 5,
+          speechPace: 2.34,
+        },
         topics: ["integration", "pricing", "implementation"],
         actionableItems: [
           "Map integration points with existing systems",
           "Finalize pricing structure",
-          "Draft implementation timeline"
+          "Draft implementation timeline",
         ],
-      }
+      },
     ],
+    evaluation: {},
   },
   {
-    id: "9",
+    id: 9,
     name: "Elevate Construction Solutions",
     overallScore: 0.75,
     osi: {
@@ -289,17 +375,24 @@ export const initialLeads: LeadData[] = [
           emotion: "mixed",
           score: 0.52,
         },
+        engagement: {
+          talkToListen: 0.5,
+          turnTakingFrequency: 0.5,
+          interruptions: 5,
+          speechPace: 2.34,
+        },
         topics: ["project management", "resource allocation", "mobile access"],
         actionableItems: [
           "Demo project tracking features",
           "Present resource management tools",
-          "Showcase mobile capabilities for field staff"
+          "Showcase mobile capabilities for field staff",
         ],
-      }
+      },
     ],
+    evaluation: {},
   },
   {
-    id: "10",
+    id: 10,
     name: "Pinnacle AgriTech",
     overallScore: 0.81,
     osi: {
@@ -315,11 +408,17 @@ export const initialLeads: LeadData[] = [
           emotion: "positive",
           score: 0.83,
         },
+        engagement: {
+          talkToListen: 0.5,
+          turnTakingFrequency: 0.5,
+          interruptions: 5,
+          speechPace: 2.34,
+        },
         topics: ["crop management", "weather integration", "reporting"],
         actionableItems: [
           "Demo crop monitoring dashboard",
           "Present weather data integration",
-          "Customize yield reporting"
+          "Customize yield reporting",
         ],
       },
       {
@@ -328,13 +427,21 @@ export const initialLeads: LeadData[] = [
           emotion: "positive",
           score: 0.78,
         },
+        engagement: {
+          talkToListen: 0.5,
+          turnTakingFrequency: 0.5,
+          interruptions: 5,
+          speechPace: 2.34,
+        },
         topics: ["mobile access", "offline capabilities", "implementation"],
         actionableItems: [
           "Demo offline data collection",
           "Present mobile field tools",
-          "Draft implementation strategy for rural areas"
+          "Draft implementation strategy for rural areas",
         ],
-      }
+      },
     ],
-  }
-];
+    evaluation: {},
+  },
+]
+

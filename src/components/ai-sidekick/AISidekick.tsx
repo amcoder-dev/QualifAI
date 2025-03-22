@@ -13,18 +13,18 @@ import {
 import { LeadsContext } from "../../contexts/LeadsContext"
 import { initialLeads } from "../../data/initialData"
 import axios from "axios"
-import { LeadAudio } from "../../types"
+import { AudioAnalysisResult } from "../../types"
 import { useAuth } from "../../hooks/useAuth"
 
 export const AISidekick: React.FC = () => {
-  const { user } = useAuth()
+  const { user, supabase } = useAuth()
 
   const [isRecording, setIsRecording] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [showLeadsDropdown, setShowLeadsDropdown] = useState(false)
   const [showConfirmation, setShowConfirmation] = useState(false)
-  const [selectedLead, setSelectedLead] = useState<string | null>(null)
+  const [selectedLead, setSelectedLead] = useState<number | null>(null)
   const [audioData, setAudioData] = useState<{
     volume: number
     tone: "low" | "medium" | "high"
@@ -75,13 +75,14 @@ export const AISidekick: React.FC = () => {
     }
   }
 
-  const handleSaveToLead = (leadId: string) => {
+  const handleSaveToLead = (leadId: number) => {
     setSelectedLead(leadId)
     setShowLeadsDropdown(false)
     setShowConfirmation(true)
   }
 
-  const [analysisResults, setAnalysisResults] = useState<LeadAudio | null>(null)
+  const [analysisResults, setAnalysisResults] =
+    useState<AudioAnalysisResult | null>(null)
 
   // Function to analyze audio using our lead scoring service
   const analyzeAudio = async (file: File) => {
@@ -90,7 +91,7 @@ export const AISidekick: React.FC = () => {
       if (!user) throw new Error("User is logged out")
       const formData = new FormData()
       formData.append("file", file)
-      const resp = await axios.post<LeadAudio>(
+      const resp = await axios.post<AudioAnalysisResult>(
         `${import.meta.env.VITE_SERVER_URL}/api/analyze_audio`,
         formData,
         {
@@ -109,6 +110,11 @@ export const AISidekick: React.FC = () => {
 
   const handleConfirmSave = async () => {
     if (selectedLead && analysisResults) {
+      const { error } = await supabase
+        .from("lead_audios")
+        .update({ lead_id: selectedLead })
+        .eq("id", analysisResults.audioID)
+      if (error) throw error
       const selectedLeadData = initialLeads.find((l) => l.id === selectedLead)
       if (selectedLeadData) {
         updateLead(selectedLead, {
@@ -325,7 +331,8 @@ export const AISidekick: React.FC = () => {
                         <div className="flex justify-between items-center">
                           <span className="text-sm">Relevance:</span>
                           <div className="flex items-center gap-2">
-                            {!analysisResults || !analysisResults.search ||
+                            {!analysisResults ||
+                            !analysisResults.search ||
                             analysisResults.search.relevanceScore > 0.7 ? (
                               <>
                                 <ThumbsUp className="w-4 h-4 text-green-500" />

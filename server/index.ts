@@ -35,25 +35,29 @@ app.post(
   upload.single("file"),
   async (req, res) => {
     console.log("Audio analysis request received")
-    
+
     if (!req.file) {
       console.error("No file provided")
-      return res.status(400).json({ error: "File not provided." })
+      res.status(400).json({ error: "File not provided." })
+      return
     }
-    
-    console.log(`File received: ${req.file.originalname || 'unnamed'}, size: ${req.file.size} bytes`)
-    
+
+    console.log(
+      `File received: ${req.file.originalname || "unnamed"}, size: ${req.file.size} bytes`
+    )
+
     try {
-      // Process the audio file - this will also create a new lead record
+      // Process the audio file.
       const result = await audioRequest(req.file.buffer)
       console.log("Audio analysis complete, sending response")
-      return res.json(result)
+      res.json(result)
+      return
     } catch (e) {
       console.error("Error in audio analysis:", e)
-      return res.status(500).json({ 
+      res.status(500).json({
         error: "Server is busy. Please try again later.",
-        details: e.message 
       })
+      return
     }
   }
 )
@@ -61,24 +65,26 @@ app.post(
 // Get lead data endpoint - now using the auto-generated lead_id
 app.get("/api/leads/:id", checkAuth, async (req, res) => {
   const leadId = req.params.id
-  
+
   try {
     const supabase = initSupabase()
     const { data, error } = await supabase
-      .from('leads')
-      .select('*')
-      .eq('lead_id', leadId)
+      .from("leads")
+      .select("*")
+      .eq("lead_id", leadId)
       .single()
-    
+
     if (error) {
       console.error("Error fetching lead:", error)
-      return res.status(500).json({ error: "Failed to fetch lead data" })
+      res.status(500).json({ error: "Failed to fetch lead data" })
+      return
     }
-    
+
     if (!data) {
-      return res.status(404).json({ error: "Lead not found" })
+      res.status(404).json({ error: "Lead not found" })
+      return
     }
-    
+
     // Format the response to match the expected LeadData structure
     const leadResponse = {
       id: data.lead_id,
@@ -87,68 +93,78 @@ app.get("/api/leads/:id", checkAuth, async (req, res) => {
       osi: {
         industry: data.industry || "Unknown",
         relevance: data.osi_relevance,
-        companyWebsite: data.company_website
+        companyWebsite: data.company_website,
       },
-      audios: [{
-        date: data.audio_date,
-        sentiment: {
-          emotion: data.sentiment_emotion,
-          score: data.sentiment_score
+      audios: [
+        {
+          date: data.audio_date,
+          sentiment: {
+            emotion: data.sentiment_emotion,
+            score: data.sentiment_score,
+          },
+          engagement: {
+            talkToListen: data.talk_to_listen_ratio,
+            turnTakingFrequency: data.turn_taking_frequency,
+            interruptions: data.interruptions,
+            speechPace: data.speech_pace,
+          },
+          topics: data.topics || [],
+          actionableItems: data.actionable_items || [],
         },
-        engagement: {
-          talkToListen: data.talk_to_listen_ratio,
-          turnTakingFrequency: data.turn_taking_frequency,
-          interruptions: data.interruptions,
-          speechPace: data.speech_pace
-        },
-        topics: data.topics || [],
-        actionableItems: data.actionable_items || []
-      }],
-      evaluation: {}
+      ],
+      evaluation: {},
     }
-    
-    return res.json(leadResponse)
+
+    res.json(leadResponse)
+    return
   } catch (e) {
     console.error("Server error:", e)
-    return res.status(500).json({ error: "Server error. Please try again later." })
+    res.status(500).json({ error: "Server error. Please try again later." })
+    return
   }
 })
 
 // Get all leads endpoint
-app.get("/api/leads", checkAuth, async (req, res) => {
+app.get("/api/leads", checkAuth, async (_, res) => {
   try {
     const supabase = initSupabase()
     const { data, error } = await supabase
-      .from('leads')
-      .select('lead_id, name, industry, created_at')
-      .order('created_at', { ascending: false })
-    
+      .from("leads")
+      .select("lead_id, name, industry, created_at")
+      .order("created_at", { ascending: false })
+
     if (error) {
       console.error("Error fetching leads:", error)
-      return res.status(500).json({ error: "Failed to fetch leads" })
+      res.status(500).json({ error: "Failed to fetch leads" })
+      return
     }
-    
-    return res.json(data || [])
+
+    res.json(data || [])
+    return
   } catch (e) {
     console.error("Server error:", e)
-    return res.status(500).json({ error: "Server error. Please try again later." })
+    res.status(500).json({ error: "Server error. Please try again later." })
+    return
   }
 })
 
 // Standalone AI Search route
 app.post("/api/search", checkAuth, async (req, res) => {
   const { query } = req.body
-  
+
   if (!query || typeof query !== "string") {
-    return res.status(400).json({ error: "Valid search query is required." })
+    res.status(400).json({ error: "Valid search query is required." })
+    return
   }
-  
+
   try {
     const searchResults = await aiSearchRequest(query)
-    return res.json(searchResults)
+    res.json(searchResults)
+    return
   } catch (e) {
     console.error("Search error:", e)
-    return res.status(500).json({ error: "Search failed. Please try again later." })
+    res.status(500).json({ error: "Search failed. Please try again later." })
+    return
   }
 })
 

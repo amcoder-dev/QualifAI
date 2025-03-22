@@ -2,9 +2,13 @@ import crypto from "crypto"
 import axios from "axios"
 import { z } from "zod"
 import { JigsawStack } from "jigsawstack"
-import { v4 as uuidv4 } from 'uuid'
 import { initSupabase } from "./supabaseClient"
-import type { EngagementData, LeadAudio, SentimentData, SearchResult, AISearchData } from "../src/types"
+import type {
+  EngagementData,
+  SentimentData,
+  AISearchData,
+  AudioAnalysisResult,
+} from "../src/types"
 
 import {
   extractActions,
@@ -26,48 +30,37 @@ export const initExternalAPI = () => {
   })
 }
 
-export const audioRequest = async (audio: Buffer): Promise<LeadAudio> => {
+export const audioRequest = async (
+  audio: Buffer
+): Promise<AudioAnalysisResult> => {
   try {
     console.log("Starting audio analysis")
-    
+
     // Generate transcript
     console.log("Generating transcript")
     const transcript = await generateTranscript(audio)
     console.log("Transcript generated successfully")
-    
-    // Default company and industry
-    const companyName = "Unknown Company"
-    const industry = "Technology"
-    const searchQuery = `Please search something for this company: ${companyName} in this industry: ${industry}`
-    
+
     console.log("Starting parallel analysis tasks")
-    const [sentimentResp, engagementResp, topicResp, actionResp, searchResp] =
+    const [sentimentResp, engagementResp, topicResp, actionResp] =
       await Promise.all([
         sentiment(transcript),
         engagementPrompts(transcript),
         topicPrompt(transcript),
         extractActionsPrompt(transcript),
-        aiSearchRequest(searchQuery),
       ])
-      
     console.log("All analysis tasks completed")
 
-    // Generate a unique audio ID
-    const audioId = uuidv4()
-    console.log("Generated audio ID:", audioId)
-    
+    let audioID = crypto.randomBytes(16).toString("hex")
     // Insert into Supabase and get the auto-generated lead ID
     try {
       console.log("Storing data in Supabase")
       const supabase = initSupabase()
-      
+
       // Insert a new record
       const { data, error } = await supabase
-        .from('leads')
+        .from("lead_audios")
         .insert({
-          audio_id: audioId,
-          name: companyName,
-          industry: industry,
           sentiment_emotion: sentimentResp.emotion,
           sentiment_score: sentimentResp.score,
           talk_to_listen_ratio: engagementResp.talkToListen,
@@ -76,10 +69,8 @@ export const audioRequest = async (audio: Buffer): Promise<LeadAudio> => {
           speech_pace: engagementResp.speechPace,
           topics: topicResp,
           actionable_items: actionResp,
-          osi_relevance: searchResp.relevanceScore
         })
         .select()
-      
       if (error) {
         console.error("Error storing lead data:", error)
       } else {
@@ -88,15 +79,15 @@ export const audioRequest = async (audio: Buffer): Promise<LeadAudio> => {
     } catch (error) {
       console.error("Error inserting lead data:", error)
     }
-    
+
     // Return the response
     return {
+      audioID: audioID,
       date: new Date().toDateString(),
       sentiment: sentimentResp,
       engagement: engagementResp,
       topics: topicResp,
       actionableItems: actionResp,
-      search: searchResp,
     }
   } catch (error) {
     console.error("Error in audioRequest:", error)
@@ -111,14 +102,14 @@ export const generateTranscript = async (audio: Buffer): Promise<string> => {
       filename: crypto.randomBytes(8).toString("hex") + ".mp3",
       overwrite: true,
     })
-    
+
     console.log("File uploaded with key:", file.key)
     console.log("Requesting speech-to-text conversion")
-    
+
     const result = await jigsawStack.audio.speech_to_text({
       file_store_key: file.key,
     })
-    
+
     console.log("Speech-to-text conversion complete")
     return result.chunks
       .map((x) => x.timestamp[0] + " - " + x.timestamp[1] + "s: " + x.text)
@@ -243,6 +234,9 @@ export const sendPrompt = async (prompt: string): Promise<string | null> => {
 export const aiSearchRequest = async (query: string): Promise<AISearchData> => {
   console.log("Performing AI search for:", query)
   try {
+    type SearchResponse = ReturnType<
+      ReturnType<typeof JigsawStack>["web"]["search"]
+    >
     const searchResponse = await Promise.race([
       jigsawStack.web.search({
         query,
@@ -250,13 +244,13 @@ export const aiSearchRequest = async (query: string): Promise<AISearchData> => {
         safe_search: "moderate",
         spell_check: true,
       }),
-      new Promise((_, reject) => 
+      new Promise<SearchResponse>((_, reject) =>
         setTimeout(() => reject(new Error("Search timeout")), 15000)
-      )
-    ]) as any;
-    
+      ),
+    ])
+
     console.log("Search response received")
-    
+
     if (!searchResponse || !searchResponse.success) {
       console.error("Search failed or returned invalid response")
       return {
@@ -264,63 +258,67 @@ export const aiSearchRequest = async (query: string): Promise<AISearchData> => {
         overview: "Search failed to return results.",
         results: [],
         relevanceScore: 0.5,
-        isSafe: true
+        isSafe: true,
       }
     }
-    
-    let snippets = "";
+
+    let snippets = ""
     try {
       snippets = (searchResponse.results || [])
-        .map(result => (result.snippets || []))
+        .map((result) => result.snippets || [])
         .flat()
         .slice(0, 5) // Get top 5 snippets
-        .join("\n\n");
-      
+        .join("\n\n")
+
       console.log("Extracted snippets")
     } catch (e) {
       console.error("Error extracting snippets:", e)
-      snippets = "No snippets available";
+      snippets = "No snippets available"
     }
-    
-    let relevanceScore = 0.5; // Default value
+
+    let relevanceScore = 0.5 // Default value
     try {
       const modifiedPrompt = calculateAISearchRelevantScorePrompt.replace(
-        "webSnippets: [", 
+        "webSnippets: [",
         `webSnippets: [\n"${snippets}",`
-      );
-      
-      const relevanceResponse = await sendPrompt(modifiedPrompt);
+      )
+
+      const relevanceResponse = await sendPrompt(modifiedPrompt)
       console.log("Relevance response received")
-      
+
       // Extract Relevance Score
       if (relevanceResponse) {
-        const cleanJson = jsonClean(relevanceResponse);
+        const cleanJson = jsonClean(relevanceResponse)
         if (cleanJson) {
           try {
-            const parsed = JSON.parse(cleanJson);
-            if (typeof parsed.relevanceScore === 'number') {
-              relevanceScore = parsed.relevanceScore;
+            const parsed = JSON.parse(cleanJson)
+            if (typeof parsed.relevanceScore === "number") {
+              relevanceScore = parsed.relevanceScore
             }
           } catch (parseError) {
-            console.error("JSON parse error:", parseError);
+            console.error("JSON parse error:", parseError)
             // Try to extract a number if JSON parsing fails
-            const numberMatch = relevanceResponse.match(/([0-9]*\.?[0-9]+)/);
+            const numberMatch = relevanceResponse.match(/([0-9]*\.?[0-9]+)/)
             if (numberMatch && numberMatch[0]) {
-              const extractedNumber = parseFloat(numberMatch[0]);
-              if (!isNaN(extractedNumber) && extractedNumber >= 0 && extractedNumber <= 1) {
-                relevanceScore = extractedNumber;
+              const extractedNumber = parseFloat(numberMatch[0])
+              if (
+                !isNaN(extractedNumber) &&
+                extractedNumber >= 0 &&
+                extractedNumber <= 1
+              ) {
+                relevanceScore = extractedNumber
               }
             }
           }
         }
       }
-      
-      console.log("Final relevance score:", relevanceScore);
+
+      console.log("Final relevance score:", relevanceScore)
     } catch (e) {
-      console.error("Error calculating relevance score:", e);
+      console.error("Error calculating relevance score:", e)
       // Continue with default score
     }
-    
+
     return {
       query,
       overview: searchResponse.ai_overview || "Information about " + query,
@@ -329,14 +327,14 @@ export const aiSearchRequest = async (query: string): Promise<AISearchData> => {
       isSafe: searchResponse.is_safe || true,
     }
   } catch (error) {
-    console.error("Error with AI Search:", error);
+    console.error("Error with AI Search:", error)
     // Return fallback data instead of throwing
     return {
       query,
       overview: "Information about " + query,
       results: [],
       relevanceScore: 0.5,
-      isSafe: true
+      isSafe: true,
     }
   }
 }

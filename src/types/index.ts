@@ -1,3 +1,5 @@
+import { SupabaseClient } from "@supabase/supabase-js"
+
 // Types
 export interface EngagementData {
   talkToListen: number
@@ -20,42 +22,51 @@ export interface LeadAudio {
   search?: AISearchData // Added search data
 }
 
+export type AudioAnalysisResult = LeadAudio & {
+  audioID: string
+}
+
 export interface LeadData {
-  id: string;
-  name: string;
-  overallScore?: number; // 0-1
+  id: number
+  name: string
+  overallScore?: number // 0-1
   osi: {
     // Open Source Intelligence
-    industry: string;
-    relevance?: number; // 0-1
-    companyWebsite?: string;
-  };
+    industry: string
+    relevance?: number // 0-1
+    webPresence?: number // 0-1
+    companyWebsite?: string
+  }
   audios: {
-    date: string;
+    date: string
     sentiment: {
-      emotion: string;
-      score: number; // 0-1
-    };
+      emotion: string
+      score: number // 0-1
+    }
     engagement: {
-      talkToListen: number;
-      turnTakingFrequency: number;
-      interruptions: number;
-      speechPace: number;
-    };
-    topics: string[];
-    actionableItems: string[];
-  }[];
-  evaluation: Record<string, any>;
+      talkToListen: number
+      turnTakingFrequency: number
+      interruptions: number
+      speechPace: number
+    }
+    topics: string[]
+    actionableItems: string[]
+  }[]
+  evaluation: Record<string, any>
 }
 
 export interface LeadsContextType {
-  leads: LeadData[]
+  leadCount: number
+  getLeads: (ids: number[]) => Promise<LeadData[]>
+  getLeadsWithAudioInfo: (ids: number[]) => Promise<LeadData[]>
+  getFirstNLeads: (from: number, count: number) => Promise<LeadData[]>
   addLead: (data: LeadData) => void
-  updateLead: (id: string, data: Partial<LeadData>) => void
-  deleteLead: (id: string) => void
+  updateLead: (id: number, data: Partial<LeadData>) => void
+  deleteLead: (id: number) => void
 }
 
 export interface AuthContextType {
+  supabase: SupabaseClient
   isAuthenticated: boolean
   user: { email: string; accessToken: string } | null
   login: (email: string, password: string) => Promise<void>
@@ -94,22 +105,22 @@ export interface AISearchData {
 }
 
 export interface LeadRecord {
-  lead_id: string;
-  audio_id?: string | null;
-  name: string;
-  overall_score?: number;
-  industry?: string;
-  company_website?: string;
-  osi_relevance?: number;
-  audio_date?: string;
-  sentiment_emotion?: string;
-  sentiment_score?: number;
-  talk_to_listen_ratio?: number;
-  turn_taking_frequency?: number;
-  interruptions?: number;
-  speech_pace?: number;
-  topics?: string[];
-  actionable_items?: string[];
-  created_at?: string;
-  updated_at?: string;
+  lead_id: string
+  audio_id?: string | null
+  name: string
+  overall_score?: number
+  industry?: string
+  company_website?: string
+  osi_relevance?: number
+  audio_date?: string
+  sentiment_emotion?: string
+  sentiment_score?: number
+  talk_to_listen_ratio?: number
+  turn_taking_frequency?: number
+  interruptions?: number
+  speech_pace?: number
+  topics?: string[]
+  actionable_items?: string[]
+  created_at?: string
+  updated_at?: string
 }

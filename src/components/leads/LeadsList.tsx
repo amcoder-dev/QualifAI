@@ -1,29 +1,50 @@
-import React, { useContext, useState } from "react"
-import {
-  Search,
-  Filter,
-  ChevronLeft,
-  ChevronRight,
-  Plus,
-  Download,
-} from "lucide-react"
+import React, { useContext, useEffect, useState } from "react"
+import { Search, Filter, ChevronLeft, ChevronRight, Plus } from "lucide-react"
 import { LeadsContext } from "../../contexts/LeadsContext"
 import { LeadsTable } from "./LeadsTable"
+import { useAuth } from "../../hooks/useAuth"
+import { LeadData } from "../../types"
 
 export const LeadsList: React.FC = () => {
+  const { supabase } = useAuth()
+  const [from, setFrom] = useState(0)
+  const [page, setPage] = useState(1)
+  const [leads, setLeads] = useState<LeadData[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [showFilters, setShowFilters] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [newLead, setNewLead] = useState({
     name: "",
     type: "",
-    date: new Date().toISOString().split("T")[0],
   })
-  const { leads } = useContext(LeadsContext)
+  const { getFirstNLeads, getLeadsWithAudioInfo, leadCount } =
+    useContext(LeadsContext)
+  useEffect(() => {
+    getFirstNLeads(from, 10)
+      .then((leads) => {
+        setLeads(leads)
+        return getLeadsWithAudioInfo(leads.map((x) => x.id))
+      })
+      .then((leadsWithAudio) => setLeads(leadsWithAudio))
+  }, [from, supabase])
 
-  const handleCreateLead = () => {
-    const id = `lead-${Date.now()}`
-    // TODO: Send request to backend.
+  const goToFirst = () => {
+    setFrom(0)
+    setPage(1)
+  }
+  const goToNext = () => {
+    if (leads.length === 0 || page === Math.ceil(leadCount / 10)) return
+    setFrom(leads[leads.length - 1].id)
+    setPage(page + 1)
+  }
+
+  const handleCreateLead = async () => {
+    const { error } = await supabase.from("leads").insert({
+      name: newLead.name,
+      osi_industry: newLead.type,
+      evaluation: {},
+    })
+    if (error) throw error
 
     // Close the modal
     setShowCreateModal(false)
@@ -32,7 +53,6 @@ export const LeadsList: React.FC = () => {
     setNewLead({
       name: "",
       type: "",
-      date: new Date().toISOString().split("T")[0],
     })
   }
 
@@ -131,10 +151,16 @@ export const LeadsList: React.FC = () => {
                   Showing 1 to {filteredLeads.length} of {leads.length} results
                 </p>
                 <div className="flex items-center gap-2">
-                  <button className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50">
+                  <button
+                    className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+                    onClick={goToFirst}
+                  >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
-                  <button className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50">
+                  <button
+                    className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+                    onClick={goToNext}
+                  >
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
@@ -191,19 +217,6 @@ export const LeadsList: React.FC = () => {
                         <option value="3D Elements">3D Elements</option>
                         <option value="Image">Image</option>
                       </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Date
-                      </label>
-                      <input
-                        type="date"
-                        name="date"
-                        value={newLead.date}
-                        onChange={handleInputChange}
-                        className="w-full border border-gray-200 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      />
                     </div>
                   </div>
 

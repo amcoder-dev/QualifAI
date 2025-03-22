@@ -10,6 +10,7 @@ const supabase = createClient(
 
 // Create context with default values
 export const AuthContext = createContext<AuthContextType>({
+  supabase: supabase,
   isAuthenticated: false,
   user: null,
   login: async () => {},
@@ -49,16 +50,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     return () => subscription.unsubscribe()
   })
 
-  const login = (email: string, password: string) =>
-    supabase.auth.signInWithPassword({
+  const login = async (email: string, password: string) => {
+    await supabase.auth.signInWithPassword({
       email,
       password,
     })
+  }
 
   const logout = () => supabase.auth.signOut()
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
+    <AuthContext.Provider
+      value={{ isAuthenticated, user, login, logout, supabase }}
+    >
       {children}
     </AuthContext.Provider>
   )
