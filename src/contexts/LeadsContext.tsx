@@ -1,5 +1,5 @@
 import React, { createContext, useState, ReactNode, useEffect } from "react"
-import { LeadData, LeadsContextType } from "../types"
+import { LeadAudio, LeadData, LeadsContextType } from "../types"
 import { useAuth } from "../hooks/useAuth"
 
 // Create context with default values
@@ -67,8 +67,54 @@ export const LeadsProvider: React.FC<{ children: ReactNode }> = ({
       })
   }, [supabase])
 
+  const overallFactor = {
+    sentiment: 4,
+    presence: 3,
+    relevance: 3,
+  }
+
+  const sentiment = (data: LeadAudio[], decay: number) => {
+    let result = 0
+    let weight = 0
+    data.forEach((x, i) => {
+      result += x.sentiment.score * Math.pow(decay, i)
+      weight += Math.pow(decay, i)
+    })
+    return result * weight
+  }
+
+  const recalculate = (result: LeadData): LeadData => {
+    result.sentimentScore = sentiment(result.audios, 0.7)
+    result.weights = { sentiment: 0, presence: 0, relevance: 0 }
+    let totalWeight = 0
+    let value = 0
+    if (result.sentimentScore) {
+      result.weights.sentiment = overallFactor.sentiment
+      value += result.sentimentScore * overallFactor.sentiment
+      totalWeight += overallFactor.sentiment
+    }
+    if (result.osi.webPresence) {
+      result.weights.presence = overallFactor.presence
+      value += result.osi.webPresence * overallFactor.presence
+      totalWeight += overallFactor.presence
+    }
+    if (result.osi.relevance) {
+      result.weights.relevance = overallFactor.relevance
+      value += result.osi.relevance * overallFactor.relevance
+      totalWeight += overallFactor.relevance
+    }
+
+    if (totalWeight > 0) {
+      result.weights.sentiment /= totalWeight
+      result.weights.presence /= totalWeight
+      result.weights.relevance /= totalWeight
+      result.overallScore = value / totalWeight
+    }
+    return result
+  }
+
   const convertLead = (data: any): LeadData => {
-    return {
+    const result: LeadData = {
       id: data.id as number,
       name: data.name as string,
       osi: {
@@ -79,6 +125,7 @@ export const LeadsProvider: React.FC<{ children: ReactNode }> = ({
       audios: [],
       evaluation: data.evaluation,
     }
+    return recalculate(result)
   }
 
   const saveLeads = async (data: LeadData[]) => {
@@ -102,6 +149,7 @@ export const LeadsProvider: React.FC<{ children: ReactNode }> = ({
     let result: Record<number, LeadData> = {}
     for (const lead of leads) {
       result[lead.id] = lead
+      result[lead.id].audios = []
     }
     for (const x of data) {
       result[x.lead_id].audios.push({
@@ -120,7 +168,7 @@ export const LeadsProvider: React.FC<{ children: ReactNode }> = ({
         actionableItems: x.actionable_items as string[],
       })
     }
-    const results = Object.keys(result).map((x) => result[+x])
+    const results = Object.keys(result).map((x) => recalculate(result[+x]))
     saveLeads(results)
     return results
   }

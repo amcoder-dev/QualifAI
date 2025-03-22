@@ -1,18 +1,7 @@
 import React from "react"
 import { useNavigate } from "react-router-dom"
 import { FileAudio } from "lucide-react"
-import { LeadData } from "../../types"
-
-const scoreBackground = (score?: number) => {
-  if (!score) return "bg-gray-500"
-  if (score > 0.8) {
-    return "bg-green-500"
-  } else if (score > 0.6) {
-    return "bg-yellow-500"
-  } else {
-    return "bg-red-500"
-  }
-}
+import { LeadData, scoreIndicator } from "../../types"
 
 interface LeadsTableProps {
   leads: LeadData[]
@@ -55,11 +44,13 @@ export const LeadsTable: React.FC<LeadsTableProps> = ({ leads }) => {
               <td className="p-4 text-gray-500">{lead.osi.industry}</td>
               <td className="p-4 text-gray-500 flex items-center gap-2">
                 <div
-                  className={`w-2 h-2 rounded-full ${scoreBackground(
+                  className={`w-2 h-2 rounded-full ${scoreIndicator(
                     lead.overallScore
                   )}`}
                 />
-                {lead.overallScore ? lead.overallScore * 100 : "N/A"}
+                {lead.overallScore
+                  ? `${Math.round(lead.overallScore * 100)}%`
+                  : "N/A"}
               </td>
               {lead.audios.length > 0 ? (
                 <>

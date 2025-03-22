@@ -1,5 +1,38 @@
 import { SupabaseClient } from "@supabase/supabase-js"
 
+export const scoreName = (score?: number) => {
+  if (!score) return "N/A"
+  if (score > 0.8) {
+    return "Positive"
+  } else if (score > 0.6) {
+    return "Neutral"
+  } else {
+    return "Negative"
+  }
+}
+
+export const scoreIndicator = (score?: number) => {
+  if (!score) return "bg-gray-500"
+  if (score > 0.8) {
+    return "bg-green-500"
+  } else if (score > 0.6) {
+    return "bg-yellow-500"
+  } else {
+    return "bg-red-500"
+  }
+}
+
+export const scoreBackground = (score?: number) => {
+  if (!score) return "bg-gray-500 text-white"
+  if (score > 0.8) {
+    return "bg-green-100 text-green-800"
+  } else if (score > 0.6) {
+    return "bg-yellow-100 text-yellow-800"
+  } else {
+    return "bg-red-100 text-red-800"
+  }
+}
+
 // Types
 export interface EngagementData {
   talkToListen: number
@@ -30,6 +63,12 @@ export interface LeadData {
   id: number
   name: string
   overallScore?: number // 0-1
+  sentimentScore?: number // 0-1
+  weights?: {
+    sentiment: number // 0-1
+    presence: number // 0-1
+    relevance: number // 0-1
+  }
   osi: {
     // Open Source Intelligence
     industry: string
@@ -102,25 +141,4 @@ export interface AISearchData {
   results: SearchResult[]
   relevanceScore: number
   isSafe: boolean
-}
-
-export interface LeadRecord {
-  lead_id: string
-  audio_id?: string | null
-  name: string
-  overall_score?: number
-  industry?: string
-  company_website?: string
-  osi_relevance?: number
-  audio_date?: string
-  sentiment_emotion?: string
-  sentiment_score?: number
-  talk_to_listen_ratio?: number
-  turn_taking_frequency?: number
-  interruptions?: number
-  speech_pace?: number
-  topics?: string[]
-  actionable_items?: string[]
-  created_at?: string
-  updated_at?: string
 }
