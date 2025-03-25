@@ -2,9 +2,10 @@ import React, { useContext, useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 import { LeadsContext } from "../../contexts/LeadsContext"
 import { AISearchData, LeadData, scoreBackground, scoreName } from "../../types"
-import { RefreshCw } from "lucide-react"
+import { Search } from "lucide-react"
 import axios from "axios"
 import { useAuth } from "../../hooks/useAuth"
+import ReactMarkdown from "react-markdown"
 
 export const LeadDetail: React.FC = () => {
   const { user, supabase } = useAuth()
@@ -75,8 +76,12 @@ export const LeadDetail: React.FC = () => {
           <div>
             <h1 className="text-2xl font-semibold flex gap-2">
               <span>{lead.name}</span>
-              <button onClick={refreshOsi}>
-                <RefreshCw className="size-4" />
+              <button
+                onClick={refreshOsi}
+                className="flex items-center gap-1 px-2 py-1 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+              >
+                AI Search
+                <Search className="size-4" />
               </button>
             </h1>
             <p className="text-gray-500">{lead.osi.industry}</p>
@@ -199,9 +204,9 @@ export const LeadDetail: React.FC = () => {
           {lead.osi?.overview ? (
             <div className="bg-gray-50 rounded-lg p-6 col-span-2">
               <h2 className="text-lg font-semibold mb-4">Overview</h2>
-              {lead.osi.overview.split("\n").map((x) => (
-                <p className="mb-2">{x}</p>
-              ))}
+              <div className="flex flex-col gap-2">
+                <ReactMarkdown>{lead.osi.overview}</ReactMarkdown>
+              </div>
             </div>
           ) : (
             <></>
