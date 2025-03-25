@@ -14,6 +14,8 @@ import { LeadsContext } from "../../contexts/LeadsContext"
 import { initialLeads } from "../../data/initialData"
 import { AudioAnalysisResult, LeadData } from "../../types"
 import { useAuth } from "../../hooks/useAuth"
+import {MediaRecorder, register} from 'extendable-media-recorder';
+import {connect} from 'extendable-media-recorder-wav-encoder';
 
 export const AISidekick: React.FC = () => {
   const { user, supabase } = useAuth()
@@ -33,13 +35,30 @@ export const AISidekick: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const animationRef = useRef<number | null>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
+  const streamRef = useRef<MediaStream | null>(null)
   const { getFirstNLeads, updateLead } = useContext(LeadsContext)
 
   useEffect(() => {
     getFirstNLeads(0, 1000).then((x) => setLeadsList(x))
   }, [supabase])
 
-  // Simulate audio volume and tone changes
+  // Register the WAV encoder when component mounts
+  useEffect(() => {
+    const registerWavEncoder = async () => {
+      try {
+        await register(await connect())
+        console.log("WAV encoder registered successfully")
+      } catch (error) {
+        console.error("Failed to register WAV encoder:", error)
+      }
+    }
+    
+    registerWavEncoder()
+  }, [])
+
+  // Simulate audio volume and tone changes during recording
   useEffect(() => {
     if (isRecording) {
       let lastUpdate = Date.now()
@@ -69,6 +88,96 @@ export const AISidekick: React.FC = () => {
       }
     }
   }, [isRecording])
+
+  const startRecording = async () => {
+    try {
+      // Reset audio chunks
+      audioChunksRef.current = []
+      
+      // Request microphone access with echo cancellation
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+        } 
+      })
+      
+      streamRef.current = stream
+      
+      // Create media recorder with WAV format
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'audio/wav'
+      })
+      
+      mediaRecorderRef.current = mediaRecorder
+  
+      // Set up event handlers
+      mediaRecorder.addEventListener('dataavailable', (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data)
+        }
+      })
+      
+      mediaRecorder.addEventListener('stop', async () => {
+        try {
+          // Create a blob from all chunks
+          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' })
+          
+          // Create a file from the blob
+          const audioFile = new File([audioBlob], `recording-${Date.now()}.wav`, {
+            type: 'audio/wav'
+          })
+          
+          // Create a synthetic event object that mimics the file input change event
+          const syntheticEvent = {
+            target: {
+              files: [audioFile]
+            }
+          } as unknown as React.ChangeEvent<HTMLInputElement>
+          
+          // Use the handleFileUpload function directly
+          handleFileUpload(syntheticEvent)
+          
+        } catch (error) {
+          console.error("Error processing recording:", error)
+        } finally {
+          // Always clean up the stream
+          cleanupStream()
+        }
+      })
+      
+      // Start recording
+      mediaRecorder.start()
+      setIsRecording(true)
+      
+    } catch (error) {
+      console.error("Error starting recording:", error)
+      setIsRecording(false)
+    }
+  }
+  
+  // Function to clean up the stream
+  const cleanupStream = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop())
+      streamRef.current = null
+    }
+  }
+  
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop()
+      setIsRecording(false)
+    }
+  }
+    
+
+  const toggleRecording = () => {
+    if (isRecording) {
+      stopRecording()
+    } else {
+      startRecording()
+    }
+  }
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -101,6 +210,7 @@ export const AISidekick: React.FC = () => {
       setAnalysisResults(resp.data)
       setIsAnalyzing(false)
     } catch (e) {
+      console.error("Error analyzing audio:", e)
       setIsAnalyzing(false)
     }
   }
@@ -174,7 +284,7 @@ export const AISidekick: React.FC = () => {
                 className={`relative z-10 w-16 h-16 rounded-full ${
                   isRecording ? getToneColor() : "bg-indigo-600"
                 } text-white flex items-center justify-center`}
-                onClick={() => setIsRecording(!isRecording)}
+                onClick={toggleRecording}
                 style={{
                   transform: isRecording
                     ? `scale(${0.9 + audioData.volume * 0.3}) translateY(${(audioData.volume - 0.5) * 10}px)`
