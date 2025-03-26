@@ -238,6 +238,8 @@ Example Output:
 ]
 }
 
+Extra reminder: If the client turns out to be angry or dissatisfied, please do not qualify the lead at all. Just give "Give up the customer".
+
 Please return only the JSON object with an "actions" key containing 1-3 recommended actions from the fixed options.
 
 Here is the transcript:
