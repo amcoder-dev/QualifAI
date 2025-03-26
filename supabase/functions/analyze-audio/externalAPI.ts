@@ -70,6 +70,7 @@ export const audioRequest = async (
       const { data, error } = await supabase
         .from("lead_audios")
         .insert({
+          audio_id: audioID,
           sentiment_emotion: sentimentResp.emotion,
           sentiment_score: sentimentResp.score,
           talk_to_listen_ratio: engagementResp.talkToListen,
