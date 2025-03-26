@@ -42,8 +42,9 @@ export interface EngagementData {
 }
 
 export interface SentimentData {
+  sentiment_type: string
   emotion: string
-  score: number // 0-1
+  confidence_score: number // 0-1
 }
 
 export interface LeadAudio {

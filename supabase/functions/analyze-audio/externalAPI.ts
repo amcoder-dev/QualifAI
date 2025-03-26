@@ -72,7 +72,8 @@ export const audioRequest = async (
         .insert({
           audio_id: audioID,
           sentiment_emotion: sentimentResp.emotion,
-          sentiment_score: sentimentResp.score,
+          sentiment_confidence_score: sentimentResp.confidence_score,
+          sentiment_type: sentimentResp.sentiment_type,
           talk_to_listen_ratio: engagementResp.talkToListen,
           turn_taking_frequency: engagementResp.turnTakingFrequency,
           interruptions: engagementResp.interruptions,
@@ -145,11 +146,12 @@ const sentiment = async (transcript: string): Promise<SentimentData> => {
   const sentiment = await jigsawStack.sentiment({ text: transcript })
   console.log("Sentiment analysis complete")
   if (!sentiment.success) {
-    return { score: 0.5, emotion: "Unknown" }
+    return { sentiment_type: "Unknown", emotion: "Unknown",  confidence_score: 0.5}
   }
   return {
-    score: sentiment.sentiment.score,
+    sentiment_type: sentiment.sentiment.sentiment,
     emotion: sentiment.sentiment.emotion,
+    confidence_score: sentiment.sentiment.score
   }
 }
 
