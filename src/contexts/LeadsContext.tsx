@@ -2,6 +2,13 @@ import React, { createContext, useState, ReactNode, useEffect } from "react"
 import { LeadAudio, LeadData, LeadsContextType } from "../types"
 import { useAuth } from "../hooks/useAuth"
 
+// New interface for user-defined weights
+interface UserWeights {
+  sentiment: number
+  presence: number
+  relevance: number
+}
+
 // Create context with default values
 export const LeadsContext = createContext<LeadsContextType>({
   leadCount: 0,
@@ -11,6 +18,14 @@ export const LeadsContext = createContext<LeadsContextType>({
   addLead: () => {},
   updateLead: () => {},
   deleteLead: () => {},
+  weights: { 
+    sentiment: 4, 
+    presence: 3, 
+    relevance: 3 
+  },
+  timeDecay: 0.7,
+  setWeights: () => {},
+  setTimeDecay: () => {},
 })
 
 // Leads Provider Component
@@ -20,6 +35,15 @@ export const LeadsProvider: React.FC<{ children: ReactNode }> = ({
   const [leadsCache, setLeadsCache] = useState<Record<number, LeadData>>({})
   const [firstIDCache, setFirstIDCache] = useState<Record<number, number[]>>({})
   const [leadCount, setLeadCount] = useState<number>(0)
+  
+  // New state for configurable weights and decay
+  const [weights, setWeights] = useState<UserWeights>({
+    sentiment: 4,
+    presence: 3,
+    relevance: 3,
+  })
+  const [timeDecay, setTimeDecay] = useState<number>(0.7)
+  
   const { supabase } = useAuth()
 
   const getFirstNLeads = async (
@@ -67,41 +91,64 @@ export const LeadsProvider: React.FC<{ children: ReactNode }> = ({
       })
   }, [supabase])
 
-  const overallFactor = {
-    sentiment: 4,
-    presence: 3,
-    relevance: 3,
+  function sentimentFactor(type: string): number {
+    switch (type) {
+      case "positive":
+        return 0.7
+      case "neutral":
+        return 0.5
+      case "negative":
+        return 0.2
+      default:
+        return 0.5 // fallback if unknown
+    }
   }
 
-  const sentiment = (data: LeadAudio[], decay: number) => {
-    let result = 0
-    let weight = 0
-    data.forEach((x, i) => {
-      result += x.sentiment.score * Math.pow(decay, i)
-      weight += Math.pow(decay, i)
+  const sentiment = (audios: LeadAudio[]): number => {
+    if (!audios.length) return 0
+
+    let weightedSum = 0
+    let totalWeight = 0
+
+    audios.forEach((audio, i) => {
+      // Map sentiment_type => factor in [0..1]
+      const typeValue = sentimentFactor(audio.sentiment.sentiment_type)
+
+      // Multiply by confidence score, so we only give partial credit
+      // if confidence is not 100%
+      const baseScore = typeValue * audio.sentiment.confidence_score
+
+      // Decay for older audios
+      const decayWeight = Math.pow(timeDecay, i)  
+      // or if you want date-based decay:
+      // const daysSinceCall = (Date.now() - new Date(audioDate).getTime()) / (1000 * 3600 * 24)
+      // const decayWeight = Math.pow(timeDecay, daysSinceCall) // if you prefer day-based
+
+      // Weighted sum
+      weightedSum += baseScore * decayWeight
+      totalWeight += decayWeight
     })
-    return result * weight
+
+    // Return average so final range is still [0..1]
+    return totalWeight > 0 ? (weightedSum / totalWeight) : 0
   }
 
+  // Updated to use current weights state
   const recalculate = (result: LeadData): LeadData => {
-    result.sentimentScore = sentiment(result.audios, 0.7)
+    result.sentimentScore = sentiment(result.audios)
     result.weights = { sentiment: 0, presence: 0, relevance: 0 }
     let totalWeight = 0
     let value = 0
     if (result.sentimentScore) {
-      result.weights.sentiment = overallFactor.sentiment
-      value += result.sentimentScore * overallFactor.sentiment
-      totalWeight += overallFactor.sentiment
+      result.weights.sentiment = weights.sentiment
+      value += result.sentimentScore * weights.sentiment
+      totalWeight += weights.sentiment
     }
-    if (result.osi.webPresence) {
-      result.weights.presence = overallFactor.presence
-      value += result.osi.webPresence * overallFactor.presence
-      totalWeight += overallFactor.presence
-    }
+
     if (result.osi.relevance) {
-      result.weights.relevance = overallFactor.relevance
-      value += result.osi.relevance * overallFactor.relevance
-      totalWeight += overallFactor.relevance
+      result.weights.relevance = weights.relevance
+      value += result.osi.relevance * weights.relevance
+      totalWeight += weights.relevance
     }
 
     if (totalWeight > 0) {
@@ -156,8 +203,9 @@ export const LeadsProvider: React.FC<{ children: ReactNode }> = ({
       result[x.lead_id].audios.push({
         date: new Date(x.audio_date as string).toLocaleDateString(),
         sentiment: {
+          sentiment_type: x.sentiment_type as string,
           emotion: x.sentiment_emotion as string,
-          score: x.sentiment_score as number,
+          confidence_score: x.sentiment_confidence_score as number,
         },
         engagement: {
           talkToListen: x.talk_to_listen_ratio as number,
@@ -195,6 +243,15 @@ export const LeadsProvider: React.FC<{ children: ReactNode }> = ({
     })
   }
 
+  // Adding effect to recalculate all leads when weights or timeDecay change
+  useEffect(() => {
+    const newLeadsCache = { ...leadsCache }
+    for (const id in newLeadsCache) {
+      newLeadsCache[id] = recalculate(newLeadsCache[id])
+    }
+    setLeadsCache(newLeadsCache)
+  }, [weights, timeDecay])
+
   return (
     <LeadsContext.Provider
       value={{
@@ -205,6 +262,10 @@ export const LeadsProvider: React.FC<{ children: ReactNode }> = ({
         addLead,
         deleteLead,
         updateLead,
+        weights,
+        timeDecay,
+        setWeights,
+        setTimeDecay,
       }}
     >
       {children}

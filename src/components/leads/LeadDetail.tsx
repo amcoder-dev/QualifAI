@@ -29,12 +29,6 @@ export const LeadDetail: React.FC = () => {
   const sentimentScore = lead?.weights?.sentiment
     ? Math.round(lead.weights.sentiment * lead.sentimentScore! * 100)
     : 0
-  const presenceWeight = lead?.weights?.sentiment
-    ? Math.round(lead.weights.presence * 100)
-    : 0
-  const presenceScore = lead?.weights?.presence
-    ? Math.round(lead.weights.presence * lead.osi.webPresence! * 100)
-    : 0
   const relevanceWeight = lead?.weights?.relevance
     ? Math.round(lead.weights.relevance * 100)
     : 0
@@ -90,7 +84,7 @@ export const LeadDetail: React.FC = () => {
 
         <div className="grid grid-cols-2 gap-6">
           <div className="bg-gray-50 rounded-lg p-6">
-            <h2 className="text-lg font-semibold mb-4">Sentiment Analysis</h2>
+            <h2 className="text-lg font-semibold mb-4">Overall Lead Score</h2>
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span>{scoreName(lead.overallScore)}</span>
@@ -135,14 +129,6 @@ export const LeadDetail: React.FC = () => {
                 <div className="flex justify-between items-center">
                   <span>Sentiment Factor ({sentimentWeight}%)</span>
                   <span>{sentimentScore}%</span>
-                </div>
-              ) : (
-                <></>
-              )}
-              {presenceWeight ? (
-                <div className="flex justify-between items-center">
-                  <span>Web Presence ({presenceWeight}%)</span>
-                  <span>{presenceScore}%</span>
                 </div>
               ) : (
                 <></>

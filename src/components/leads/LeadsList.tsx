@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from "react"
 import { Search, Filter, ChevronLeft, ChevronRight, Plus } from "lucide-react"
 import { LeadsContext } from "../../contexts/LeadsContext"
 import { LeadsTable } from "./LeadsTable"
+import { WeightsPanel } from "./WeightsPanel" // Import the new component
 import { useAuth } from "../../hooks/useAuth"
 import { LeadData } from "../../types"
 
@@ -174,6 +175,9 @@ export const LeadsList: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Add WeightsPanel component here */}
+          <WeightsPanel />
 
           {/* Create Lead Modal */}
           {showCreateModal && (

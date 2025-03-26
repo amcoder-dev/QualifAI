@@ -142,3 +142,23 @@ export interface AISearchData {
   relevanceScore: number
   websiteURL: string
 }
+
+export interface LeadsContextType {
+  leadCount: number
+  getLeads: (ids: number[]) => Promise<LeadData[]>
+  getLeadsWithAudioInfo: (ids: number[]) => Promise<LeadData[]>
+  getFirstNLeads: (from: number, count: number) => Promise<LeadData[]>
+  addLead: () => void
+  updateLead: (id: number, data: Partial<LeadData>) => void
+  deleteLead: (id: number) => void
+  
+  // New properties for weight configuration
+  weights: {
+    sentiment: number
+    presence: number
+    relevance: number
+  }
+  timeDecay: number
+  setWeights: (weights: {sentiment: number, presence: number, relevance: number}) => void
+  setTimeDecay: (value: number) => void
+}
