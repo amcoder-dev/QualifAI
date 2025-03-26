@@ -56,6 +56,7 @@ export const LeadDetail: React.FC = () => {
         companyWebsite: resp.data.websiteURL,
       },
     })
+    setLead((await getLeadsWithAudioInfo([lead!.id]))[0])
   }
 
   if (!lead) {
@@ -118,25 +119,27 @@ export const LeadDetail: React.FC = () => {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span>Overall Score</span>
-                <span className="font-bold">
-                  {lead?.overallScore
-                    ? Math.round(lead.overallScore * 100)
-                    : "Unknown"}
+                <span>
+                  <span className="font-bold">
+                    {lead?.overallScore
+                      ? Math.round(lead.overallScore * 100)
+                      : "Unknown"}
+                  </span>
                   /100
                 </span>
               </div>
               {sentimentWeight ? (
                 <div className="flex justify-between items-center">
-                  <span>Sentiment Factor ({sentimentWeight}%)</span>
-                  <span>{sentimentScore}%</span>
+                  <span>Interaction Sentiment</span>
+                  <span><span className="font-bold">{sentimentScore}</span>/{sentimentWeight}</span>
                 </div>
               ) : (
                 <></>
               )}
               {relevanceWeight ? (
                 <div className="flex justify-between items-center">
-                  <span>Company Relevance ({relevanceWeight}%)</span>
-                  <span>{relevanceScore}%</span>
+                  <span>Company Relevance</span>
+                  <span><span className="font-bold">{relevanceScore}</span>/{relevanceWeight}</span>
                 </div>
               ) : (
                 <></>
@@ -147,7 +150,7 @@ export const LeadDetail: React.FC = () => {
           <div className="bg-gray-50 rounded-lg p-6">
             <h2 className="text-lg font-semibold mb-4">Lead Status</h2>
             <div className="space-y-4">
-              <div className="flex text-right justify-between items-center">
+              <div className="flex flex-wrap text-right justify-between items-center">
                 <span>Website</span>
                 <a
                   href={lead.osi.companyWebsite}

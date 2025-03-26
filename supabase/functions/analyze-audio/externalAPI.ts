@@ -17,7 +17,6 @@ import {
   talkToListen,
   topicExtraction,
   turnTakingFrequency,
-  calculateAISearchRelevantScorePrompt,
 } from "./prompt.ts"
 
 let jigsawStack: ReturnType<typeof JigsawStack>
@@ -239,107 +238,5 @@ const sendPrompt = async (prompt: string): Promise<string | null> => {
   } catch (error) {
     console.error("Error with OpenAI API:", error.message)
     return null
-  }
-}
-
-export const aiSearchRequest = async (query: string): Promise<AISearchData> => {
-  console.log("Performing AI search for:", query)
-  try {
-    type SearchResponse = ReturnType<
-      ReturnType<typeof JigsawStack>["web"]["search"]
-    >
-    const searchResponse = await Promise.race([
-      jigsawStack.web.search({
-        query,
-        ai_overview: true,
-        safe_search: "moderate",
-        spell_check: true,
-      }),
-      new Promise<SearchResponse>((_, reject) =>
-        setTimeout(() => reject(new Error("Search timeout")), 15000)
-      ),
-    ])
-
-    console.log("Search response received")
-
-    if (!searchResponse || !searchResponse.success) {
-      console.error("Search failed or returned invalid response")
-      return {
-        overview: "Search failed to return results.",
-        relevanceScore: 0.5,
-        websiteURL: "",
-      }
-    }
-
-    let snippets = ""
-    try {
-      snippets = (searchResponse.results || [])
-        .map((result) => result.snippets || [])
-        .flat()
-        .slice(0, 5) // Get top 5 snippets
-        .join("\n\n")
-
-      console.log("Extracted snippets")
-    } catch (e) {
-      console.error("Error extracting snippets:", e)
-      snippets = "No snippets available"
-    }
-
-    let relevanceScore = 0.5 // Default value
-    try {
-      const modifiedPrompt = calculateAISearchRelevantScorePrompt.replace(
-        "webSnippets: [",
-        `webSnippets: [\n"${snippets}",`
-      )
-
-      const relevanceResponse = await sendPrompt(modifiedPrompt)
-      console.log("Relevance response received")
-
-      // Extract Relevance Score
-      if (relevanceResponse) {
-        const cleanJson = jsonClean(relevanceResponse)
-        if (cleanJson) {
-          try {
-            const parsed = JSON.parse(cleanJson)
-            if (typeof parsed.relevanceScore === "number") {
-              relevanceScore = parsed.relevanceScore
-            }
-          } catch (parseError) {
-            console.error("JSON parse error:", parseError)
-            // Try to extract a number if JSON parsing fails
-            const numberMatch = relevanceResponse.match(/([0-9]*\.?[0-9]+)/)
-            if (numberMatch && numberMatch[0]) {
-              const extractedNumber = parseFloat(numberMatch[0])
-              if (
-                !isNaN(extractedNumber) &&
-                extractedNumber >= 0 &&
-                extractedNumber <= 1
-              ) {
-                relevanceScore = extractedNumber
-              }
-            }
-          }
-        }
-      }
-
-      console.log("Final relevance score:", relevanceScore)
-    } catch (e) {
-      console.error("Error calculating relevance score:", e)
-      // Continue with default score
-    }
-
-    return {
-      overview: searchResponse.ai_overview || "Information about " + query,
-      relevanceScore,
-      websiteURL: searchResponse.results[0].url,
-    }
-  } catch (error) {
-    console.error("Error with AI Search:", error)
-    // Return fallback data instead of throwing
-    return {
-      overview: "Information unavailable.",
-      relevanceScore: 0.5,
-      websiteURL: "",
-    }
   }
 }
