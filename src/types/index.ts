@@ -81,6 +81,7 @@ export interface LeadData {
   audios: {
     date: string
     sentiment: {
+      sentiment_type: string|undefined
       emotion: string
       score: number // 0-1
     }

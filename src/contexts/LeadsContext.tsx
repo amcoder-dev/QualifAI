@@ -44,6 +44,18 @@ export const LeadsProvider: React.FC<{ children: ReactNode }> = ({
   })
   const [timeDecay, setTimeDecay] = useState<number>(0.7)
   
+  useEffect(() => {
+    const newLead: typeof leadsCache = {}
+    Object.keys(leadsCache).forEach((x) => {
+      if (leadsCache[+x].audios) {
+        newLead[+x] = recalculate(leadsCache[+x])
+      } else {
+        newLead[+x] = leadsCache[+x]
+      }
+    })
+    setLeadsCache(newLead)
+  }, [weights, timeDecay])
+
   const { supabase } = useAuth()
 
   const getFirstNLeads = async (
@@ -167,7 +179,7 @@ export const LeadsProvider: React.FC<{ children: ReactNode }> = ({
       osi: {
         industry: data.osi_industry as string,
         relevance: data.osi_relevance as number | undefined,
-        companyWebsite: data.company_website as string | undefined,
+        companyWebsite: data.osi_company_website as string | undefined,
         overview: data.osi_overview as string | undefined,
       },
       audios: [],
