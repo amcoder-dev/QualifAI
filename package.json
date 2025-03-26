@@ -4,9 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
-    "dev:client": "vite",
-    "dev:server": "cd server && npm run dev",
+    "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -14,9 +12,12 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
     "axios": "^1.8.4",
+    "extendable-media-recorder": "^9.2.22",
+    "extendable-media-recorder-wav-encoder": "^7.0.126",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-markdown": "^10.1.0",
     "react-router-dom": "^6.22.3",
     "uuid": "^11.1.0"
   },
