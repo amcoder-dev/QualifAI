@@ -10,7 +10,9 @@ import {
   MoreHorizontal,
   Clock,
   X,
-  AlertCircle
+  AlertCircle,
+  Edit,
+  Trash2
 } from 'lucide-react';
 
 interface CalendarEvent {
@@ -30,6 +32,8 @@ export const Calendar: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<'month' | 'week' | 'day'>('month');
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+  const [showEditTaskModal, setShowEditTaskModal] = useState(false);
+  const [showEventMenu, setShowEventMenu] = useState<string | null>(null);
   const [newTask, setNewTask] = useState<Partial<CalendarEvent>>({
     title: '',
     type: 'Task',
@@ -38,14 +42,15 @@ export const Calendar: React.FC = () => {
     time: '9:00 AM',
     duration: 30
   });
+  const [editTask, setEditTask] = useState<CalendarEvent | null>(null);
   
-  // Mock events
-  const events: CalendarEvent[] = [
+  // Mock events - Now as a state so we can update it
+  const [events, setEvents] = useState<CalendarEvent[]>([
     {
       id: '1',
       title: 'Call with Dave Peterson',
       type: 'Call',
-      date: new Date(2025, 2, 22), // March 22, 2025
+      date: new Date(2025, 3, 22), // April 22, 2025
       time: '10:30 AM',
       priority: 'High',
       with: 'Dave Peterson',
@@ -55,7 +60,7 @@ export const Calendar: React.FC = () => {
       id: '2',
       title: 'Send proposal to Contoso Ltd',
       type: 'Email',
-      date: new Date(2025, 2, 22), // March 22, 2025
+      date: new Date(2025, 3, 22), // April 22, 2025
       time: '2:00 PM',
       priority: 'Medium',
       with: 'Contoso Ltd',
@@ -65,7 +70,7 @@ export const Calendar: React.FC = () => {
       id: '3',
       title: 'Follow up with Global Tech',
       type: 'Task',
-      date: new Date(2025, 2, 23), // March 23, 2025
+      date: new Date(2025, 3, 23), // April 23, 2025
       time: '11:00 AM',
       priority: 'Medium',
       with: 'Global Tech',
@@ -75,7 +80,7 @@ export const Calendar: React.FC = () => {
       id: '4',
       title: 'Quarterly review meeting',
       type: 'Meeting',
-      date: new Date(2025, 2, 24), // March 24, 2025
+      date: new Date(2025, 3, 24), // April 24, 2025
       time: '3:00 PM',
       priority: 'Low',
       duration: 90
@@ -84,7 +89,7 @@ export const Calendar: React.FC = () => {
       id: '5',
       title: 'Strategy planning session',
       type: 'Meeting',
-      date: new Date(2025, 2, 25), // March 25, 2025
+      date: new Date(2025, 3, 25), // April 25, 2025
       time: '1:00 PM',
       priority: 'Medium',
       duration: 120
@@ -93,13 +98,71 @@ export const Calendar: React.FC = () => {
       id: '6',
       title: 'Demo with new client',
       type: 'Call',
-      date: new Date(2025, 2, 26), // March 26, 2025
+      date: new Date(2025, 3, 6), // April 6, 2025
       time: '10:00 AM',
       priority: 'High',
       with: 'ABC Corp',
       duration: 60
     }
-  ];
+  ]);
+
+  // Event handlers for edit/delete actions
+  const handleEditEvent = (event: CalendarEvent) => {
+    setEditTask(event);
+    setShowEventMenu(null);
+    setShowEditTaskModal(true);
+  };
+
+  const handleDeleteEvent = (eventId: string) => {
+    // Confirm deletion
+    if (window.confirm('Are you sure you want to delete this event?')) {
+      setEvents(events.filter(event => event.id !== eventId));
+      setShowEventMenu(null);
+    }
+  };
+
+  const updateEvent = (updatedEvent: CalendarEvent) => {
+    setEvents(events.map(event => 
+      event.id === updatedEvent.id ? updatedEvent : event
+    ));
+    setShowEditTaskModal(false);
+    setEditTask(null);
+  };
+
+  const addNewEvent = () => {
+    // Basic validation - title is required
+    if (!newTask.title) return;
+    
+    // Generate a unique ID
+    const id = String(Date.now());
+    
+    // Create the new event
+    const newEvent: CalendarEvent = {
+      id,
+      title: newTask.title || '',
+      type: newTask.type as 'Call' | 'Email' | 'Task' | 'Meeting',
+      date: newTask.date || new Date(),
+      time: newTask.time || '9:00 AM',
+      priority: newTask.priority as 'High' | 'Medium' | 'Low',
+      description: newTask.description,
+      with: newTask.with,
+      duration: newTask.duration || 30
+    };
+    
+    // Add event to the list
+    setEvents([...events, newEvent]);
+    
+    // Close modal and reset form
+    setShowAddTaskModal(false);
+    setNewTask({
+      title: '',
+      type: 'Task',
+      priority: 'Medium',
+      date: new Date(),
+      time: '9:00 AM',
+      duration: 30
+    });
+  };
 
   // Helper functions
   const getEventIcon = (type: string) => {
@@ -315,7 +378,7 @@ export const Calendar: React.FC = () => {
                 <div className={`w-1 h-1 rounded-full ${getPriorityColor(event.priority)}`}></div>
                 {getEventIcon(event.type)}
                 <span className="truncate">{event.title}</span>
-              </div>
+                </div>
             ))}
           </div>
           {dayEvents.length > 2 && (
@@ -515,7 +578,7 @@ export const Calendar: React.FC = () => {
     );
   };
 
-  // Render agenda view (upcoming events)
+  // Render agenda view (upcoming events) - Updated with edit/delete functionality
   const renderAgenda = () => {
     const now = new Date();
     const upcomingEvents = events
@@ -524,48 +587,82 @@ export const Calendar: React.FC = () => {
 
     return (
       <div className="mt-6 bg-white rounded-xl shadow-sm border border-gray-200">
-        <div className="p-4 border-b border-gray-200 bg-gray-50">
+        <div className="p-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold">Upcoming Events</h3>
         </div>
-        <div className="divide-y divide-gray-200 border-t border-gray-100">
-          {upcomingEvents.map(event => (
-            <div 
-              key={event.id} 
-              className="p-4 hover:bg-gray-50 cursor-pointer"
-              onClick={() => {
-                setCurrentDate(new Date(event.date));
-                setView('day');
-              }}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-gray-100">
-                    {getEventIcon(event.type)}
+        {upcomingEvents.length > 0 ? (
+          <div className="divide-y divide-gray-200">
+            {upcomingEvents.map(event => (
+              <div 
+                key={event.id} 
+                className="p-4 hover:bg-gray-50 relative"
+              >
+                <div className="flex items-center justify-between">
+                  <div 
+                    className="flex items-start gap-3 cursor-pointer flex-1"
+                    onClick={() => {
+                      setCurrentDate(new Date(event.date));
+                      setView('day');
+                    }}
+                  >
+                    <div className="p-2 rounded-lg bg-gray-100">
+                      {getEventIcon(event.type)}
+                    </div>
+                    <div>
+                      <h4 className="font-medium">{event.title}</h4>
+                      <p className="text-sm text-gray-500">
+                        {event.date.toLocaleDateString('en-US', { 
+                          weekday: 'short', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })} • {event.time}
+                      </p>
+                      {event.with && (
+                        <p className="text-sm text-gray-500">With: {event.with}</p>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-medium">{event.title}</h4>
-                    <p className="text-sm text-gray-500">
-                      {event.date.toLocaleDateString('en-US', { 
-                        weekday: 'short', 
-                        month: 'short', 
-                        day: 'numeric' 
-                      })} • {event.time}
-                    </p>
-                    {event.with && (
-                      <p className="text-sm text-gray-500">With: {event.with}</p>
-                    )}
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${getPriorityColor(event.priority)}`}></div>
+                    <button 
+                      className="text-gray-400 hover:text-gray-600 relative"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowEventMenu(showEventMenu === event.id ? null : event.id);
+                      }}
+                    >
+                      <MoreHorizontal className="w-5 h-5" />
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${getPriorityColor(event.priority)}`}></div>
-                  <button className="text-gray-400 hover:text-gray-600">
-                    <MoreHorizontal className="w-5 h-5" />
-                  </button>
-                </div>
+                
+                {/* Event actions menu (edit/delete) */}
+                {showEventMenu === event.id && (
+                  <div className="absolute right-4 top-12 mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-200 z-10 overflow-hidden">
+                    <button 
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      onClick={() => handleEditEvent(event)}
+                    >
+                      <Edit className="w-4 h-4" />
+                      <span>Edit</span>
+                    </button>
+                    <button 
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 flex items-center gap-2"
+                      onClick={() => handleDeleteEvent(event.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>Delete</span>
+                    </button>
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="p-6 text-center text-gray-500">
+            <p>No upcoming events</p>
+          </div>
+        )}
       </div>
     );
   };
@@ -584,6 +681,20 @@ export const Calendar: React.FC = () => {
     }
   };
 
+  // Event listener to close dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = () => {
+      if (showEventMenu) {
+        setShowEventMenu(null);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [showEventMenu]);
+
   return (
     <main className="ml-64 p-8">
       <div className="max-w-7xl mx-auto">
@@ -593,7 +704,7 @@ export const Calendar: React.FC = () => {
             <p className="text-gray-600">Manage your schedule and tasks</p>
           </div>
           <div className="flex items-center gap-4">
-          <button 
+            <button 
               onClick={today}
               className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-[#403DA1] to-[#635FC1] text-white rounded-lg 
                         shadow-sm hover:shadow-lg hover:from-[#373490] hover:to-[#5652B0] hover:-translate-y-0.5 
@@ -843,28 +954,7 @@ export const Calendar: React.FC = () => {
                   Cancel
                 </button>
                 <button
-                  onClick={() => {
-                    // Basic validation - title is required
-                    if (!newTask.title) return;
-                    
-                    // Generate a unique ID
-                    const id = String(Date.now());
-                    
-                    // Add event to the list (would typically be a state update or API call)
-                    // For demo purposes, we're just closing the modal
-                    alert(`New task "${newTask.title}" would be added here`);
-                    
-                    // Close modal and reset form
-                    setShowAddTaskModal(false);
-                    setNewTask({
-                      title: '',
-                      type: 'Task',
-                      priority: 'Medium',
-                      date: new Date(),
-                      time: '9:00 AM',
-                      duration: 30
-                    });
-                  }}
+                  onClick={addNewEvent}
                   disabled={!newTask.title}
                   className={`px-4 py-2 rounded-lg ${
                     !newTask.title
@@ -874,6 +964,221 @@ export const Calendar: React.FC = () => {
                 >
                   Add Task
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Edit Task Modal */}
+        {showEditTaskModal && editTask && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+              <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold">Edit Task</h3>
+                <button 
+                  onClick={() => {
+                    setShowEditTaskModal(false);
+                    setEditTask(null);
+                  }}
+                  className="p-1 rounded-full hover:bg-gray-100"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="p-4 space-y-4">
+                {/* Task Title */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Task Title *
+                  </label>
+                  <input 
+                    type="text"
+                    value={editTask.title}
+                    onChange={(e) => setEditTask({...editTask, title: e.target.value})}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#403DA1] focus:border-[#403DA1] outline-none"
+                    placeholder="Enter task title"
+                  />
+                </div>
+                
+                {/* Task Type */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Type
+                  </label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {['Call', 'Email', 'Task', 'Meeting'].map(type => (
+                      <button
+                        key={type}
+                        onClick={() => setEditTask({...editTask, type: type as CalendarEvent['type']})}
+                        className={`flex items-center justify-center gap-1 p-2 rounded-lg border ${
+                          editTask.type === type 
+                            ? getTypeColor(type) + ' border-transparent'
+                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {type === 'Call' && <Phone className={`w-4 h-4 ${editTask.type === type ? 'text-blue-500' : ''}`} />}
+                        {type === 'Email' && <Mail className={`w-4 h-4 ${editTask.type === type ? 'text-purple-500' : ''}`} />}
+                        {type === 'Task' && <FileText className={`w-4 h-4 ${editTask.type === type ? 'text-yellow-500' : ''}`} />}
+                        {type === 'Meeting' && <Users className={`w-4 h-4 ${editTask.type === type ? 'text-green-500' : ''}`} />}
+                        <span className="text-sm">{type}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Task with (optional) */}
+                {(editTask.type === 'Call' || editTask.type === 'Meeting' || editTask.type === 'Email') && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      With
+                    </label>
+                    <input 
+                      type="text"
+                      value={editTask.with || ''}
+                      onChange={(e) => setEditTask({...editTask, with: e.target.value})}
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#403DA1] focus:border-[#403DA1] outline-none"
+                      placeholder={`Who is this ${editTask.type.toLowerCase()} with?`}
+                    />
+                  </div>
+                )}
+                
+                {/* Date and Time */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Date
+                    </label>
+                    <input 
+                      type="date"
+                      value={editTask.date.toISOString().split('T')[0]}
+                      onChange={(e) => {
+                        const date = new Date(e.target.value);
+                        setEditTask({...editTask, date});
+                      }}
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#403DA1] focus:border-[#403DA1] outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Time
+                    </label>
+                    <select
+                      value={editTask.time}
+                      onChange={(e) => setEditTask({...editTask, time: e.target.value})}
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#403DA1] focus:border-[#403DA1] outline-none"
+                    >
+                      {[
+                        '8:00 AM', '8:30 AM', '9:00 AM', '9:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
+                        '12:00 PM', '12:30 PM', '1:00 PM', '1:30 PM', '2:00 PM', '2:30 PM', '3:00 PM', '3:30 PM',
+                        '4:00 PM', '4:30 PM', '5:00 PM', '5:30 PM'
+                      ].map(time => (
+                        <option key={time} value={time}>{time}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                
+                {/* Duration */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Duration (minutes)
+                  </label>
+                  <select
+                    value={editTask.duration}
+                    onChange={(e) => setEditTask({...editTask, duration: parseInt(e.target.value)})}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#403DA1] focus:border-[#403DA1] outline-none"
+                  >
+                    {[15, 30, 45, 60, 90, 120].map(duration => (
+                      <option key={duration} value={duration}>{duration} min</option>
+                    ))}
+                  </select>
+                </div>
+                
+                {/* Priority */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Priority
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['Low', 'Medium', 'High'].map(priority => (
+                      <button
+                        key={priority}
+                        onClick={() => setEditTask({...editTask, priority: priority as CalendarEvent['priority']})}
+                        className={`p-2 rounded-lg border text-sm ${
+                          editTask.priority === priority
+                            ? priority === 'High' 
+                              ? 'bg-red-500 text-white border-red-500'
+                              : priority === 'Medium'
+                                ? 'bg-yellow-500 text-white border-yellow-500'
+                                : 'bg-green-500 text-white border-green-500'
+                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {priority}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Description (optional)
+                  </label>
+                  <textarea
+                    value={editTask.description || ''}
+                    onChange={(e) => setEditTask({...editTask, description: e.target.value})}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#403DA1] focus:border-[#403DA1] outline-none"
+                    placeholder="Add details about this task"
+                    rows={3}
+                  />
+                </div>
+                
+                {/* Error Message (if title is empty) */}
+                {!editTask.title && (
+                  <div className="flex items-center gap-2 text-red-500 text-sm">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>Task title is required</span>
+                  </div>
+                )}
+              </div>
+              
+              <div className="p-4 border-t border-gray-200 flex justify-between">
+                <button
+                  onClick={() => handleDeleteEvent(editTask.id)}
+                  className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 flex items-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete
+                </button>
+                
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setShowEditTaskModal(false);
+                      setEditTask(null);
+                    }}
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (editTask.title) {
+                        updateEvent(editTask);
+                      }
+                    }}
+                    disabled={!editTask.title}
+                    className={`px-4 py-2 rounded-lg ${
+                      !editTask.title
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-[#403DA1] text-white hover:bg-[#373490]'
+                    }`}
+                  >
+                    Save Changes
+                  </button>
+                </div>
               </div>
             </div>
           </div>
