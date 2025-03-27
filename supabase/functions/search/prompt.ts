@@ -7,12 +7,8 @@ export const calculateAISearchRelevantScorePrompt  = `
     R (Review): Ensure no explanation or formatting beyond the JSON object.
   
     Relevance Aspects to Consider:
-    - Problem-Solution Alignment: Does the web content discuss problems that the AI product solves?
-    - Technical Compatibility: Are the technologies mentioned compatible with the AI product's requirements?
-    - Target Audience Match: Does the web content target the same audience as the AI product?
-    - Use Case Overlap: Are similar use cases mentioned in both contents?
-    - Competitive Positioning: Is the web content from competitors or complementary solutions?
-  
+    - How much does the company and its product offered related to our AI product?
+
     Scoring Guidelines:
     - 0.0-0.2: Minimal to no relevance
     - 0.3-0.4: Low relevance with minor overlapping elements

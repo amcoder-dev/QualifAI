@@ -116,8 +116,8 @@ export const LeadsProvider: React.FC<{ children: ReactNode }> = ({
     }
   }
 
-  const sentiment = (audios: LeadAudio[]): number => {
-    if (!audios.length) return 0
+  const sentiment = (audios: LeadAudio[]): number|null => {
+    if (!audios.length) return null
 
     let weightedSum = 0
     let totalWeight = 0
@@ -151,13 +151,13 @@ export const LeadsProvider: React.FC<{ children: ReactNode }> = ({
     result.weights = { sentiment: 0, presence: 0, relevance: 0 }
     let totalWeight = 0
     let value = 0
-    if (result.sentimentScore) {
+    if (typeof result.sentimentScore === "number") {
       result.weights.sentiment = weights.sentiment
       value += result.sentimentScore * weights.sentiment
       totalWeight += weights.sentiment
     }
 
-    if (result.osi.relevance) {
+    if (typeof result.osi.relevance === "number") {
       result.weights.relevance = weights.relevance
       value += result.osi.relevance * weights.relevance
       totalWeight += weights.relevance

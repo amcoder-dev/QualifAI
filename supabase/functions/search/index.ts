@@ -168,7 +168,7 @@ Deno.serve(async (req) => {
       )
 
       const relevanceResponse = await sendPrompt(modifiedPrompt)
-      console.log("Relevance response received")
+      console.log("Relevance response received", relevanceResponse)
 
       // Extract Relevance Score
       if (relevanceResponse) {
@@ -230,6 +230,7 @@ const sendPrompt = async (prompt: string): Promise<string | null> => {
           { role: "system", content: "You are a helpful assistant." },
           { role: "user", content: prompt },
         ],
+        temperature: 0
       },
       {
         headers: {

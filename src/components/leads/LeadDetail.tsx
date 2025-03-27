@@ -30,13 +30,13 @@ export const LeadDetail: React.FC = () => {
     : 0
   const sentimentScore = lead?.weights?.sentiment
     ? Math.round(lead.weights.sentiment * lead.sentimentScore! * 100)
-    : 0
+    : null
   const relevanceWeight = lead?.weights?.relevance
     ? Math.round(lead.weights.relevance * 100)
     : 0
   const relevanceScore = lead?.weights?.relevance
     ? Math.round(lead.weights.relevance * lead.osi.relevance! * 100)
-    : 0
+    : null
 
   const refreshOsi = async () => {
     try {
@@ -170,7 +170,7 @@ export const LeadDetail: React.FC = () => {
             <div>
               <h3 className="text-sm font-medium text-[#403DA1]">Overall Score</h3>
               <p className="text-2xl font-bold mt-1">
-                {lead.overallScore
+                {typeof lead.overallScore === "number"
                   ? `${Math.round(lead.overallScore * 100)}%`
                   : "N/A"}
               </p>
@@ -179,7 +179,7 @@ export const LeadDetail: React.FC = () => {
             <div className="h-16 w-16 rounded-full flex items-center justify-center">
               <div className="h-14 w-14 rounded-full relative">
                 <div className="absolute inset-0 rounded-full bg-gray-200"></div>
-                {lead.overallScore && (
+                {typeof lead.overallScore === "number" && (
                   <div 
                     className="absolute inset-0 rounded-full bg-gradient-to-r from-[#403DA1] to-[#7349AD]"
                     style={{ 
@@ -199,7 +199,7 @@ export const LeadDetail: React.FC = () => {
             <div>
               <h3 className="text-sm font-medium text-[#7349AD]">Sentiment</h3>
               <p className="text-2xl font-bold mt-1">
-                {sentimentScore ? `${sentimentScore}%` : "N/A"}
+                {typeof sentimentScore === "number" ? `${sentimentScore}%` : "N/A"}
               </p>
               <p className="text-sm text-gray-500">
                 {sentimentWeight ? `Weight: ${sentimentWeight}%` : "Not weighted"}
@@ -222,14 +222,14 @@ export const LeadDetail: React.FC = () => {
             <div>
               <h3 className="text-sm font-medium text-[#AA55B9]">Relevance</h3>
               <p className="text-2xl font-bold mt-1">
-                {relevanceScore ? `${relevanceScore}%` : "N/A"}
+                {typeof relevanceScore === "number" ? `${relevanceScore}%` : "N/A"}
               </p>
               <p className="text-sm text-gray-500">
                 {relevanceWeight ? `Weight: ${relevanceWeight}%` : "Not weighted"}
               </p>
             </div>
             <span className={`px-3 py-1 text-sm rounded-full ${scoreBackground(lead.overallScore)}`}>
-              {!lead.overallScore
+              {typeof lead.overallScore !== "number"
                 ? "Research Further"
                 : lead.overallScore >= 0.8
                   ? "High Priority"

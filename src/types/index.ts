@@ -1,7 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js"
 
 export const scoreName = (score?: number) => {
-  if (!score) return "N/A"
+  if (typeof score !== "number") return "N/A"
   if (score > 0.8) {
     return "Positive"
   } else if (score > 0.6) {
