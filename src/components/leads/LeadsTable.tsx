@@ -73,14 +73,12 @@ export const LeadsTable: React.FC<LeadsTableProps> = ({ leads }) => {
                         ? `${Math.round(lead.overallScore * 100)}%`
                         : "N/A"}
                     </span>
-                    {lead.overallScore && (
-                      <div className="w-16 h-1 bg-gray-200 rounded-full overflow-hidden mt-1">
-                        <div 
-                          className="h-full bg-gradient-to-r from-[#403DA1] to-[#AA55B9]" 
-                          style={{ width: `${(lead.overallScore) * 100}%` }}
-                        ></div>
-                      </div>
-                    )}
+                    <div className="w-16 h-1 bg-gray-200 rounded-full overflow-hidden mt-1">
+                      <div 
+                        className="h-full bg-gradient-to-r from-[#403DA1] to-[#AA55B9]" 
+                        style={{ width: `${(lead.overallScore ?? 0) * 100}%` }}
+                      ></div>
+                    </div>
                   </div>
                 </div>
               </td>
