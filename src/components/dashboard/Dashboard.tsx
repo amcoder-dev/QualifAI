@@ -18,6 +18,7 @@ import {
 } from "lucide-react"
 import { useAuth } from "../../hooks/useAuth"
 import { useNavigate } from "react-router-dom"
+import RevenueChart from "../../components/dashboard/RevenueChart"
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth()
@@ -611,164 +612,55 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Revenue with Pipeline (moved from above) */}
-        <div className="bg-white rounded-2xl shadow-sm lg:col-span-2 border border-gray-200">
-          <div className="p-6 border-b border-gray-200 bg-gray-50">
-            <div className="flex justify-between items-center">
-              <div>
-                <h3 className="text-lg font-semibold">Revenue Pipeline</h3>
-                <p className="text-sm text-gray-500">
-                  Value: $649,000 • 68 deals
-                </p>
-              </div>
-              <button className="text-sm text-[#403DA1] font-medium hover:text-[#7349AD]">
-                View pipeline
-              </button>
-            </div>
-          </div>
-          <div className="p-6">
-            <div className="flex w-full h-8 mb-8 rounded-full overflow-hidden">
-              {pipelineStages.map((stage, index) => (
-                <div
-                  key={index}
-                  className={`${stage.color} h-full`}
-                  style={{ width: `${stage.percentage}%` }}
-                ></div>
-              ))}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              {pipelineStages.map((stage, index) => (
-                <div
-                  key={index}
-                  className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors"
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <div
-                      className={`w-3 h-3 rounded-full ${stage.color}`}
-                    ></div>
-                    <h4 className="font-medium text-sm">{stage.name}</h4>
-                  </div>
-                  <p className="text-xl font-bold mb-1">{stage.value}</p>
-                  <p className="text-sm text-gray-500">{stage.count} deals</p>
-                </div>
-              ))}
-            </div>
-          </div>
+ {/* Revenue with Pipeline (moved from above) */}
+ <div className="bg-white rounded-2xl shadow-sm lg:col-span-2 border border-gray-200">
+    <div className="p-6 border-b border-gray-200 bg-gray-50">
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-lg font-semibold">Revenue Pipeline</h3>
+          <p className="text-sm text-gray-500">
+            Value: $649,000 • 68 deals
+          </p>
         </div>
+        <button className="text-sm text-[#403DA1] font-medium hover:text-[#7349AD]">
+          View pipeline
+        </button>
       </div>
+    </div>
+    <div className="p-6">
+      <div className="flex w-full h-8 mb-8 rounded-full overflow-hidden">
+        {pipelineStages.map((stage, index) => (
+          <div
+            key={index}
+            className={`${stage.color} h-full`}
+            style={{ width: `${stage.percentage}%` }}
+          ></div>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        {pipelineStages.map((stage, index) => (
+          <div
+            key={index}
+            className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <div
+                className={`w-3 h-3 rounded-full ${stage.color}`}
+              ></div>
+              <h4 className="font-medium text-sm">{stage.name}</h4>
+            </div>
+            <p className="text-xl font-bold mb-1">{stage.value}</p>
+            <p className="text-sm text-gray-500">{stage.count} deals</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</div>
 
-      {/* Monthly Revenue Chart section */}
-      <div className="bg-white p-6 rounded-xl shadow-sm mt-6 border border-gray-200">
-        <div className="flex justify-between items-center mb-4 pb-4 border-b border-gray-200">
-          <div>
-            <h3 className="text-lg font-semibold">Overview</h3>
-            <p className="text-sm text-gray-500">Monthly Revenue</p>
-          </div>
-          <button className="flex items-center gap-2 px-3 py-1 border rounded-lg">
-            Quarterly
-            <ChevronDown className="w-4 h-4" />
-          </button>
-        </div>
-        <div className="h-72 bg-gray-50 rounded-lg flex items-center justify-center p-4">
-          <div className="w-full h-full relative">
-            {/* Revenue line */}
-            <div className="absolute top-4 right-4 flex items-center">
-              <div className="w-3 h-3 rounded-full bg-gradient-to-r from-[#7349AD] to-[#AA55B9] mr-2"></div>
-              <span className="text-sm font-medium">Revenue</span>
-            </div>
-            
-            {/* Target line */}
-            <div className="absolute top-4 right-24 flex items-center">
-              <div className="w-3 h-3 rounded-full bg-gray-300 mr-2"></div>
-              <span className="text-sm font-medium">Target</span>
-            </div>
-            
-            {/* Y-axis labels */}
-            <div className="absolute left-0 top-0 bottom-8 w-12 flex flex-col justify-between text-xs text-gray-500">
-              <div>$150k</div>
-              <div>$120k</div>
-              <div>$90k</div>
-              <div>$60k</div>
-              <div>$30k</div>
-              <div>$0</div>
-            </div>
-            
-            {/* Chart area */}
-            <div className="absolute left-14 right-4 top-8 bottom-8 border-l border-b border-gray-200">
-              {/* Target line */}
-              <div className="absolute left-0 right-0 top-1/4 border-t border-dashed border-gray-300"></div>
-              
-              {/* Grid lines */}
-              <div className="absolute left-0 right-0 top-1/2 border-t border-gray-100"></div>
-              <div className="absolute left-0 right-0 top-3/4 border-t border-gray-100"></div>
-              
-              {/* Bar chart */}
-              <div className="absolute bottom-0 inset-x-0 flex items-end justify-between h-full px-2">
-                <div className="group relative flex flex-col items-center">
-                  <div className="w-6 bg-gradient-to-b from-[#AA55B9] to-[#7349AD] h-[45%] rounded-t"></div>
-                  <div className="mt-2 text-xs text-gray-500">Jan</div>
-                  <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 bg-gray-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap transition-opacity">$67,500</div>
-                </div>
-                <div className="group relative flex flex-col items-center">
-                  <div className="w-6 bg-gradient-to-b from-[#AA55B9] to-[#7349AD] h-[35%] rounded-t"></div>
-                  <div className="mt-2 text-xs text-gray-500">Feb</div>
-                  <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 bg-gray-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap transition-opacity">$52,500</div>
-                </div>
-                <div className="group relative flex flex-col items-center">
-                  <div className="w-6 bg-gradient-to-b from-[#AA55B9] to-[#7349AD] h-[43%] rounded-t"></div>
-                  <div className="mt-2 text-xs text-gray-500">Mar</div>
-                  <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 bg-gray-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap transition-opacity">$64,500</div>
-                </div>
-                <div className="group relative flex flex-col items-center">
-                  <div className="w-6 bg-gradient-to-b from-[#AA55B9] to-[#7349AD] h-[55%] rounded-t"></div>
-                  <div className="mt-2 text-xs text-gray-500">Apr</div>
-                  <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 bg-gray-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap transition-opacity">$82,500</div>
-                </div>
-                <div className="group relative flex flex-col items-center">
-                  <div className="w-6 bg-gradient-to-b from-[#AA55B9] to-[#7349AD] h-[65%] rounded-t"></div>
-                  <div className="mt-2 text-xs text-gray-500">May</div>
-                  <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 bg-gray-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap transition-opacity">$97,500</div>
-                </div>
-                <div className="group relative flex flex-col items-center">
-                  <div className="w-6 bg-gradient-to-b from-[#AA55B9] to-[#7349AD] h-[75%] rounded-t"></div>
-                  <div className="mt-2 text-xs text-gray-500">Jun</div>
-                  <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 bg-gray-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap transition-opacity">$112,500</div>
-                </div>
-                <div className="group relative flex flex-col items-center">
-                  <div className="w-6 bg-gradient-to-b from-[#AA55B9] to-[#7349AD] h-[70%] rounded-t"></div>
-                  <div className="mt-2 text-xs text-gray-500">Jul</div>
-                  <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 bg-gray-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap transition-opacity">$105,000</div>
-                </div>
-                <div className="group relative flex flex-col items-center">
-                  <div className="w-6 bg-gradient-to-b from-[#AA55B9] to-[#7349AD] h-[80%] rounded-t"></div>
-                  <div className="mt-2 text-xs text-gray-500">Aug</div>
-                  <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 bg-gray-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap transition-opacity">$120,000</div>
-                </div>
-                <div className="group relative flex flex-col items-center">
-                  <div className="w-6 bg-gradient-to-b from-[#AA55B9] to-[#7349AD] h-[85%] rounded-t"></div>
-                  <div className="mt-2 text-xs text-gray-500">Sep</div>
-                  <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 bg-gray-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap transition-opacity">$127,500</div>
-                </div>
-                <div className="group relative flex flex-col items-center">
-                  <div className="w-6 bg-gradient-to-b from-[#AA55B9] to-[#7349AD] h-[90%] rounded-t"></div>
-                  <div className="mt-2 text-xs text-gray-500">Oct</div>
-                  <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 bg-gray-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap transition-opacity">$135,000</div>
-                </div>
-                <div className="group relative flex flex-col items-center">
-                  <div className="w-6 bg-gradient-to-b from-[#AA55B9] to-[#7349AD] h-[100%] rounded-t"></div>
-                  <div className="mt-2 text-xs text-gray-500">Nov</div>
-                  <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 bg-gray-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap transition-opacity">$150,000</div>
-                </div>
-                <div className="group relative flex flex-col items-center">
-                  <div className="w-6 bg-gradient-to-b from-[#AA55B9] to-[#7349AD] h-[90%] rounded-t"></div>
-                  <div className="mt-2 text-xs text-gray-500">Dec</div>
-                  <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 bg-gray-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap transition-opacity">$135,000</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </main>
-  )
+{/* Monthly Revenue Chart section */}
+<RevenueChart />
+
+</main>
+)
 }
